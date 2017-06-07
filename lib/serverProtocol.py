@@ -27,7 +27,11 @@ class NavtelecomProtocol(LineReceiver):
             if(b'*>FLEX' in line):
                 self.factory.ntc.coordinateFlexVersion(data,self)
             else:
-                self.factory.ntc.flexExec(line,self)
+                if(b'~' in line[0:1]):
+                    self.factory.ntc.flexExec(line,self)
+                else:
+                    #command answer
+                    return
         else:
             if(data):
                 self.factory.clientProtocols.append(self)

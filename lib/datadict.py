@@ -1,3 +1,4 @@
+#Для основных пакетов
 flexdictionary = [
     #I - int; F - float, если composite - true, type не нужен
     {'name':'Сквозной номер записи в энергонезависимой памяти', 'size': 4, 'signed': False, 'type': 'I'  },
@@ -69,7 +70,7 @@ flexdictionary = [
     {'name':'CAN полное время работы двигатеся', 'size': 4, 'signed': False, 'type': 'I' },
     {'name':'CAN Расстояние до ТО', 'size': 2, 'signed': True, 'type': 'I' },
     {'name':'CAN Скорость ТС', 'size': 1, 'signed': False, 'type': 'I' },
-        #FLEX 2.0
+    #FLEX 2.0
     #Информация о навигации
     # {'name':'Количество видимых спутников ГЛОНАСС', 'size': 1, 'signed': False, 'type': 'I' },
     # {'name':'Количество видимых спутников GPS', 'size': 1, 'signed': False, 'type': 'I' },
@@ -111,7 +112,7 @@ flexdictionary = [
     {'name':'Информация о датчиках 3-6 давления в шинах', 'size': 12, 'composite': True },
     {'name':'Информация о датчиках 7-14 давления в шинах', 'size': 24, 'composite': True },
     {'name':'Информация о датчиках 15-30 давления в шинах', 'size': 48, 'composite': True },
-        #Данные тахографа
+    #Данные тахографа
     {'name':'Активность водителей и состояние слотов карт', 'size': 1, 'composite': True },
     {'name':'Режим работы тахографа\карта', 'size': 1, 'composite': True },
     {'name':'Флаги состояния от тахографа', 'size': 1, 'composite': True },
@@ -137,4 +138,18 @@ flexdictionary = [
     {'name':'ID последней остановки', 'size': 2, 'signed': False, 'type': 'I' },
     {'name':'ID последнего маршрута', 'size': 2, 'signed': False, 'type': 'I' },
     {'name':'Статус камеры', 'size': 1, 'composite': True },
+]
+
+additionalpackagedict = [
+    {'name':'Сквозной номер записи в энергонезависимой памяти', 'size': 4, 'signed': False, 'type': 'I'  },
+    {'name':'Код события', 'size': 2, 'signed': False, 'type': 'I'  },
+    {'name':'Время события', 'size': 4, 'signed': False, 'type': 'I'},
+    {'name':'Состояние навигационного датчика', 'size': 1, 'composite': True},
+    {'name':'Время последних валидных координат (до произошедшего события)', 'size': 4, 'signed': False, 'type': 'I'  },
+    {'name':'Последняя валидная широта', 'size': 4, 'signed': True, 'type': 'I' },
+    {'name':'Последняя валидная долгота', 'size': 4, 'signed': True, 'type': 'I' },
+    {'name':'Последняя валидная высота', 'size': 4, 'signed': True, 'type': 'I' },
+    {'name':'Скорость', 'size': 4, 'signed': False, 'type': 'F' },
+    {'name':'Курс', 'size': 2, 'signed': False, 'type': 'I'},
+    {'name':'Текущий пробег', 'size': 4, 'signed': False, 'type': 'F'},
 ]

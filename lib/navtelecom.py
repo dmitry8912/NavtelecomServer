@@ -2,6 +2,7 @@ import string
 import struct
 from lib import datadict
 from lib import crc8custom
+from lib import postgres
 
 class Navtelecom:
     myId = 1
@@ -85,6 +86,8 @@ class Navtelecom:
         if(self.getClient(connection) == None):
             self.clients.update({ response[20:]: connection })
             self.connected.update({ response[20:]: { 'id':response[8:12], 'preambule': response[0:4], 'fields': [] }})
+            db = postgres.NavtelecomDB()
+            db.connectDevice(response[20:],response[8:12])
 
         return response[16:len(response)]
 
@@ -99,32 +102,36 @@ class Navtelecom:
             print('CRC Corrupt')
             return
         else:
-            #save in db!!!!
+            db = postgres.NavtelecomDB()
+            db.addRawPacket(self.getImei(connection),data)
             connection.transport.write(self.formAnswer(data))
         client = self.getClient(connection)
-        lastIndex = 3
-        if (data[:2] == b'~X' or data[:2] == b'~T'):
-            lastIndex = 6
+        #decode current state
+        if(data[:2] == b'~C'):
+            telemetry = data[2:len(data) - 1]
+            decoded = self.decodeTelemetry(telemetry, client)
+
+        #decode alarm package and\or additional package
+        if (data[:2] == b'~T' or data[:2] == b'~X'):
+            if(data[:2] == b'~T'):
+                telemetry = data[6:len(data) - 1]
+                decoded = self.decodeTelemetry(telemetry, client)
+            if(data[:2] == b'~X'):
+                telemetry = data[6:len(data) - 1]
+                decoded = self.decodeAdditionalTelemetry(telemetry)
         else:
-            if(data[:2] == b'~A'):
-                size = int(len(data[3:-1])/data[2])
-                count = int(data[2])
-                start = 3
-                while(count > 0):
-                    result = self.decodetelemetry(data[start:start+size],client)
-                    print('\n')
-                    for k, v in result.items():
-                        print(v['name'] + '=' + v['value'])
-                    start+=size
-                    count -= 1
-                return
-            else:
-                if(data[:2] == b'~E'):
-                    return
-        telemetry = data[lastIndex:len(data)-1]
-        decoded = self.decodetelemetry(telemetry,client)
-        for k,v in decoded.items():
-            print(v['name'] + '=' + v['value'])
+            #decode array and array of additional packages
+            size = int(len(data[3:-1]) / data[2])
+            count = int(data[2])
+            start = 3
+            while (count > 0):
+                if(data[:2] == b'~A'):
+                    decoded = self.decodeTelemetry(data[start:start+size],client)
+                else:
+                    if(data[:2] == b'~E'):
+                        decoded = self.decodeAdditionalTelemetry(data[start:start + size])
+                start += size
+                count -= 1
 
     def checkCRC(self, data: bytearray):
         crc = crc8custom.crc8()
@@ -132,7 +139,6 @@ class Navtelecom:
             return True
         else:
             return False
-
 
     def coordinateFlexVersion(self,data,connection):
         #flex v check
@@ -200,18 +206,39 @@ class Navtelecom:
         response.append(crc.crc(response))
         return response
 
-    def decodetelemetry(self,telemetry: bytearray, client: dict):
+    def decodeTelemetry(self,telemetry: bytearray, client: dict):
         result = {}
         offset = 0
         for f in client['fields']:
             if ('composite' in datadict.flexdictionary[f - 1] and datadict.flexdictionary[f - 1]['composite']):
-                result[f] = { 'name': datadict.flexdictionary[f - 1]['name'], 'value': 'complex' }
+                result[f] = { 'name': datadict.flexdictionary[f - 1]['name'], 'value': 'complex',
+                              'bytes': telemetry[offset:offset + datadict.flexdictionary[f - 1]['size']], 'fieldnum': f }
             else:
                 if (datadict.flexdictionary[f - 1]['type'] == 'I'):
                     value = int.from_bytes(telemetry[offset:offset + datadict.flexdictionary[f - 1]['size']],
                                            byteorder='little', signed=datadict.flexdictionary[f - 1]['signed'])
+
                 if (datadict.flexdictionary[f - 1]['type'] == 'F'):
                     value = struct.unpack('f', telemetry[offset:offset + datadict.flexdictionary[f - 1]['size']])
-                result[f] = {'name': datadict.flexdictionary[f - 1]['name'], 'value': str(value), 'bytes': telemetry[offset:offset + datadict.flexdictionary[f - 1]['size']] }
+
+                result[f] = {'name': datadict.flexdictionary[f - 1]['name'], 'value': str(value),
+                             'bytes': telemetry[offset:offset + datadict.flexdictionary[f - 1]['size']], 'fieldnum': f }
+
             offset += datadict.flexdictionary[f - 1]['size']
+        return result
+
+    def decodeAdditionalTelemetry(self, telemetry: bytearray):
+        result = []
+        offset = 0
+        for f in datadict.additionalpackagedict:
+            if ('composite' in f and f['composite']):
+                result.append({'name': f['name'], 'value': 'complex', 'bytes': telemetry[offset:offset + f['size']]})
+            else:
+                if (f['type'] == 'I'):
+                    value = int.from_bytes(telemetry[offset:offset + f['size']], byteorder='little', signed=f['signed'])
+                if (f['type'] == 'F'):
+                    value = struct.unpack('f', telemetry[offset:offset + f['size']])
+                result.append({'name': f['name'], 'value': str(value),
+                             'bytes': telemetry[offset:offset + f['size']]})
+            offset += f['size']
         return result

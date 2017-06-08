@@ -26,7 +26,7 @@ class NavtelecomDB:
         updateDevice(int(devImei),int(devId))
         return
 
-    def addRawPacket(self,imei:bytearray,data: bytearray):
+    def addRawPacket(self, imei: bytearray, data: bytearray):
         addRaw = self.db.prepare(
             "INSERT INTO raw_packets(id,device_id,data,timestamp,processed) values(DEFAULT,$1,$2,DEFAULT,DEFAULT)")
         devImei = ''
@@ -36,4 +36,13 @@ class NavtelecomDB:
         return
 
     def addDecodedPacket(self,imei,data):
+        return
+
+    def setFields(self,imei:bytearray, fields: list):
+        addFields = self.db.prepare(
+            "INSERT INTO device_fieldset(device_id,fieldset) values($1,$2) ON CONFLICT(device_id) DO UPDATE SET fieldset=$3")
+        devImei = ''
+        for b in imei:
+            devImei += chr(b)
+        addFields(int(devImei), fields, fields)
         return

@@ -155,6 +155,8 @@ class Navtelecom:
                     fieldnum += 1
             imei = self.getImei(connection)
             self.connected[imei]['fields'] = fields
+            db = postgres.NavtelecomDB()
+            db.setFields(imei,fields)
         #FLEX 2.0 struct 2.0
         response = bytearray(b'*<FLEX')
         response.append(0xB0)

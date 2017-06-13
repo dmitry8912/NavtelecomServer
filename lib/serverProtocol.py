@@ -1,9 +1,10 @@
 from twisted.internet import reactor
 from twisted.internet.protocol import ServerFactory
 from twisted.protocols.basic import LineReceiver
+from twisted.protocols.policies import TimeoutMixin
 from lib import navtelecom
 
-class NavtelecomProtocol(LineReceiver):
+class NavtelecomProtocol(LineReceiver, TimeoutMixin):
 
     name = ""
 
@@ -14,16 +15,22 @@ class NavtelecomProtocol(LineReceiver):
 
     def connectionMade(self):
         print("New connection from "+self.getName())
+        self.setTimeout(30)
 
     def connectionLost(self, reason):
         print("Lost connection from "+self.getName())
-        self.factory.clientProtocols.remove(self)
+        if(self in self.factory.clientProtocols):
+            self.factory.clientProtocols.remove(self)
         self.factory.ntc.disconnect(self)
 
     def dataReceived(self, line):
+        self.resetTimeout()
         #self.factory.clientProtocols.append(self)
         data = self.factory.ntc.read(line,self)
         if(self in self.factory.clientProtocols):
+            if (int.from_bytes(line, byteorder='little') == 0x7f):
+                #just ping message
+                return
             if(b'*>FLEX' in line):
                 self.factory.ntc.coordinateFlexVersion(data,self)
             else:
@@ -37,8 +44,11 @@ class NavtelecomProtocol(LineReceiver):
                 self.factory.clientProtocols.append(self)
                 self.factory.ntc.makeHandshake(self)
             else:
-                #error
                 print("Error!")
+
+    def timeoutConnection(self):
+        print("Сonnection timeout from:" + self.getName())
+        self.transport.abortConnection()
 
 
 class NavtelecomProtocolFactory(ServerFactory):

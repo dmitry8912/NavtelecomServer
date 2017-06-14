@@ -1,5 +1,6 @@
 import string
 import struct
+import logging
 from lib import datadict
 from lib import crc8custom
 from lib import postgres
@@ -284,7 +285,6 @@ class Navtelecom:
                     start += size
                     count -= 1
 
-
     def toNVG(self,imei: bytearray, data: list, fields: list):
         packet = nvg.NVG()
         packet.addIdentifier(imei)
@@ -306,8 +306,7 @@ class Navtelecom:
         return packet.getPacket()
 
     def sendToNVG(self,data:bytearray, packet_id):
-        print('----------------------')
-        print('packet_id='+str(packet_id))
+        logging.info('packet_id='+str(packet_id))
         import socket
         sock = socket.socket()
         sock.connect(('195.82.135.210', 2956))
@@ -315,11 +314,11 @@ class Navtelecom:
         rdata = sock.recv(1024)
         sock.close()
         if(rdata[0] == 0x55 and rdata[1:5] == data[0:4]):
-            print("NVG SEND OK")
+            logging.info("NVG SEND OK")
             db = postgres.NavtelecomDB()
             db.markPacket(packet_id)
         else:
-            print('NVG ERROR')
-            print(rdata[0])
-            print(rdata[1:5])
-            print(data[0:4])
+            logging.info('NVG ERROR')
+            logging.debug(rdata[0])
+            logging.debug(rdata[1:5])
+            logging.debug(data[0:4])

@@ -2,12 +2,13 @@ import postgresql
 
 class NavtelecomDB:
     db_conf = {
-        "host": "localhost",
+        "host": "192.168.0.41",
         "port": "5432",
         "user": "navtelecom",
         "password": "navetlecom",
         "db": "navtelecom"
     }
+
     def __init__(self):
         self.db = postgresql.open('pq://'+self.db_conf['user']+':'+self.db_conf['password']+
                                   '@'+self.db_conf['host']+':'+self.db_conf['port']+'/'+self.db_conf['db'])
@@ -45,4 +46,22 @@ class NavtelecomDB:
         for b in imei:
             devImei += chr(b)
         addFields(int(devImei), fields, fields)
+        return
+
+    def getField(self,imei:bytearray):
+        getFields = self.db.prepare(
+            "select fieldset from device_fieldset where device_id = $1")
+        return getFields(imei)
+
+    def getNotDecodedPackets(self,limit = 0):
+        query = "select * from raw_packets where processed = False order by timestamp DESC"
+        if(limit != 0):
+            query += " limit "+str(limit)
+        packets = self.db.prepare(query)
+        return packets()
+
+    def markPacket(self,packet_id):
+        markPacket = self.db.prepare(
+            "UPDATE raw_packets SET processed = True where id=$1")
+        markPacket(packet_id)
         return

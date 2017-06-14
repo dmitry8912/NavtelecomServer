@@ -3,6 +3,7 @@ import struct
 from lib import datadict
 from lib import crc8custom
 from lib import postgres
+from lib import nvg
 
 class Navtelecom:
     myId = 1
@@ -223,7 +224,7 @@ class Navtelecom:
                 if (datadict.flexdictionary[f - 1]['type'] == 'F'):
                     value = struct.unpack('f', telemetry[offset:offset + datadict.flexdictionary[f - 1]['size']])
 
-                result[f] = {'name': datadict.flexdictionary[f - 1]['name'], 'value': str(value),
+                result[f] = {'name': datadict.flexdictionary[f - 1]['name'], 'value': value,
                              'bytes': telemetry[offset:offset + datadict.flexdictionary[f - 1]['size']], 'fieldnum': f }
 
             offset += datadict.flexdictionary[f - 1]['size']
@@ -240,7 +241,85 @@ class Navtelecom:
                     value = int.from_bytes(telemetry[offset:offset + f['size']], byteorder='little', signed=f['signed'])
                 if (f['type'] == 'F'):
                     value = struct.unpack('f', telemetry[offset:offset + f['size']])
-                result.append({'name': f['name'], 'value': str(value),
+                result.append({'name': f['name'], 'value': value,
                              'bytes': telemetry[offset:offset + f['size']]})
             offset += f['size']
         return result
+
+    def decodeFlexFromDB(self):
+        db = postgres.NavtelecomDB()
+        packets = db.getNotDecodedPackets()
+        for packet in packets:
+            packet_id = packet[0]
+            imei = str(packet[1]).encode()
+            client = {'fields':db.getField(packet[1])[0][0]}
+            data = packet[2]
+            if (data[:2] == b'~C'):
+                telemetry = data[2:len(data) - 1]
+                decoded = self.decodeTelemetry(telemetry, client)
+
+                # decode alarm package and\or additional package
+            if (data[:2] == b'~T' or data[:2] == b'~X'):
+                if (data[:2] == b'~T'):
+                    telemetry = data[6:len(data) - 1]
+                    decoded = self.decodeTelemetry(telemetry, client)
+                    print(decoded)
+                    self.sendToNVG(self.toNVG(imei,decoded,client['fields']),packet_id)
+                if (data[:2] == b'~X'):
+                    telemetry = data[6:len(data) - 1]
+                    decoded = self.decodeAdditionalTelemetry(telemetry)
+            else:
+                # decode array and array of additional packages
+                size = int(len(data[3:-1]) / data[2])
+                count = int(data[2])
+                start = 3
+                while (count > 0):
+                    if (data[:2] == b'~A'):
+                        decoded = self.decodeTelemetry(data[start:start + size], client)
+                        print(decoded)
+                        self.sendToNVG(self.toNVG(imei, decoded, client['fields']),packet_id)
+                    else:
+                        if (data[:2] == b'~E'):
+                            decoded = self.decodeAdditionalTelemetry(data[start:start + size])
+                    start += size
+                    count -= 1
+
+
+    def toNVG(self,imei: bytearray, data: list, fields: list):
+        packet = nvg.NVG()
+        packet.addIdentifier(imei)
+        for f in fields:
+            if(f == 3):
+                packet.addTime(data[f]['value'])
+        packet.addCoordinates(data[10]['value'],data[11]['value'],1,data[13]['value'],data[14]['value'],int.from_bytes(data[8]['bytes'],byteorder='little') ^ 0b11000000)
+        return packet.getPacket()
+
+    def additionalToNVG(self,imei,data: list):
+        packet = nvg.NVG()
+        packet.addIdentifier(imei)
+        for f, v in data:
+            if(f == 3):
+                packet.addTime(data[f]['value'])
+            if(f == 2):
+                return
+        packet.addCoordinates(data[5]['value'],data[6]['value'],data[7]['value'],data[8]['value'],data[8] ^ 0b11000000)
+        return packet.getPacket()
+
+    def sendToNVG(self,data:bytearray, packet_id):
+        print('----------------------')
+        print('packet_id='+str(packet_id))
+        import socket
+        sock = socket.socket()
+        sock.connect(('195.82.135.210', 2956))
+        sock.send(data)
+        rdata = sock.recv(1024)
+        sock.close()
+        if(rdata[0] == 0x55 and rdata[1:5] == data[0:4]):
+            print("NVG SEND OK")
+            db = postgres.NavtelecomDB()
+            db.markPacket(packet_id)
+        else:
+            print('NVG ERROR')
+            print(rdata[0])
+            print(rdata[1:5])
+            print(data[0:4])

@@ -1,5 +1,5 @@
 import postgresql
-
+import logging
 class NavtelecomDB:
     db_conf = {
         "host": "192.168.0.41",
@@ -25,6 +25,7 @@ class NavtelecomDB:
         for b in imei:
             devImei += chr(b)
         updateDevice(int(devImei),int(devId))
+        logging.info('Device connected: IMEI='+str(imei)+'; ID='+str(id))
         return
 
     def addRawPacket(self, imei: bytearray, data: bytearray):
@@ -34,6 +35,7 @@ class NavtelecomDB:
         for b in imei:
             devImei += chr(b)
         addRaw(int(devImei), data)
+        logging.info('Device send packet: IMEI=' + str(imei) + ';')
         return
 
     def addDecodedPacket(self,imei,data):

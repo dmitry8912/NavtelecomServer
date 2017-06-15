@@ -88,7 +88,7 @@ class Navtelecom:
         if(self.getClient(connection) == None):
             self.clients.update({ response[20:]: connection })
             self.connected.update({ response[20:]: { 'id':response[8:12], 'preambule': response[0:4], 'fields': [] }})
-            db = postgres.NavtelecomDB()
+            db = postgres.NavtelecomDB.getInstance()
             db.connectDevice(response[20:],response[8:12])
 
         return response[16:len(response)]
@@ -104,7 +104,7 @@ class Navtelecom:
             print('CRC Corrupt')
             return
         else:
-            db = postgres.NavtelecomDB()
+            db = postgres.NavtelecomDB.getInstance()
             db.addRawPacket(self.getImei(connection),data)
             connection.transport.write(self.formAnswer(data))
         client = self.getClient(connection)
@@ -157,7 +157,7 @@ class Navtelecom:
                     fieldnum += 1
             imei = self.getImei(connection)
             self.connected[imei]['fields'] = fields
-            db = postgres.NavtelecomDB()
+            db = postgres.NavtelecomDB.getInstance()
             db.setFields(imei,fields)
         #FLEX 2.0 struct 2.0
         response = bytearray(b'*<FLEX')
@@ -248,7 +248,7 @@ class Navtelecom:
         return result
 
     def decodeFlexFromDB(self):
-        db = postgres.NavtelecomDB()
+        db = postgres.NavtelecomDB.getInstance()
         packets = db.getNotDecodedPackets()
         for packet in packets:
             packet_id = packet[0]
@@ -315,7 +315,7 @@ class Navtelecom:
         sock.close()
         if(rdata[0] == 0x55 and rdata[1:5] == data[0:4]):
             logging.info("NVG SEND OK")
-            db = postgres.NavtelecomDB()
+            db = postgres.NavtelecomDB.getInstance()
             db.markPacket(packet_id)
         else:
             logging.info('NVG ERROR')

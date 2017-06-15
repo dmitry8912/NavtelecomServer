@@ -1,8 +1,9 @@
 import postgresql
 import logging
 class NavtelecomDB:
+    _instance = None
     db_conf = {
-        "host": "192.168.0.41",
+        "host": "localhost",
         "port": "5432",
         "user": "navtelecom",
         "password": "navetlecom",
@@ -17,6 +18,12 @@ class NavtelecomDB:
     def __del__(self):
         self.db.close()
         return
+
+    @staticmethod
+    def getInstance():
+        if(NavtelecomDB._instance == None):
+            NavtelecomDB._instance = NavtelecomDB()
+        return NavtelecomDB._instance
 
     def connectDevice(self,imei: bytearray, id:bytearray):
         updateDevice = self.db.prepare("INSERT INTO devices(imei,ntcb_id,lastSeen) VALUES ($1,$2,DEFAULT) ON CONFLICT(imei) DO UPDATE SET lastSeen=now_ast()")
@@ -67,3 +74,11 @@ class NavtelecomDB:
             "UPDATE raw_packets SET processed = True where id=$1")
         markPacket(packet_id)
         return
+
+    def getPackets(self):
+        query = self.db.prepare("select count(*) from raw_packets where processed = False");
+        return query()
+
+    def getLastPacket(self):
+        query = self.db.prepare("select TO_CHAR(timestamp, 'DD.MM.YYYY HH:MM:SS') as lasttime from raw_packets order by timestamp DESC limit 1");
+        return query()

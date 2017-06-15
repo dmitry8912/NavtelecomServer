@@ -3,6 +3,7 @@ from twisted.internet.protocol import ServerFactory
 from twisted.protocols.basic import LineReceiver
 from twisted.protocols.policies import TimeoutMixin
 from lib import navtelecom
+from lib import postgres
 import json
 
 class NavtelecomProtocol(LineReceiver, TimeoutMixin):
@@ -63,10 +64,13 @@ class NavtelecomProtocolFactory(ServerFactory):
     def getCurrentStateInfo(self):
         import os
         import psutil
+        db = postgres.NavtelecomDB.getInstance()
         state = {
             'clients': len(self.ntc.clients),
             'pid': os.getpid(),
-            'mem': psutil.Process(os.getpid()).memory_info()[0] / float(2 ** 20)
+            'mem': psutil.Process(os.getpid()).memory_info()[0] / float(2 ** 20),
+            'packets': db.getPackets()[0][0],
+            'last': db.getLastPacket()[0][0]
         }
         return (json.dumps(state)).encode()
 

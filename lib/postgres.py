@@ -3,7 +3,7 @@ import logging
 class NavtelecomDB:
     _instance = None
     db_conf = {
-        "host": "localhost",
+        "host": "192.168.0.41",
         "port": "5432",
         "user": "navtelecom",
         "password": "navetlecom",
@@ -63,7 +63,7 @@ class NavtelecomDB:
         return getFields(imei)
 
     def getNotDecodedPackets(self,limit = 0):
-        query = "select * from raw_packets where processed = False order by timestamp DESC"
+        query = "select * from raw_packets where processed = False and timestamp >= '2017-06-16'::date order by timestamp ASC"
         if(limit != 0):
             query += " limit "+str(limit)
         packets = self.db.prepare(query)
@@ -80,5 +80,5 @@ class NavtelecomDB:
         return query()
 
     def getLastPacket(self):
-        query = self.db.prepare("select TO_CHAR(timestamp, 'DD.MM.YYYY HH:MM:SS') as lasttime from raw_packets order by timestamp DESC limit 1");
+        query = self.db.prepare("select TO_CHAR(timestamp, 'DD.MM.YYYY HH24:MI:SS') as lasttime from raw_packets order by timestamp DESC limit 1");
         return query()

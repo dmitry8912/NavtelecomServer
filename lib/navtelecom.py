@@ -307,18 +307,21 @@ class Navtelecom:
 
     def sendToNVG(self,data:bytearray, packet_id):
         logging.info('packet_id='+str(packet_id))
+        print('packet_id=' + str(packet_id))
         import socket
         sock = socket.socket()
-        sock.connect(('195.82.135.210', 2956))
+        sock.connect(('91.202.252.202', 2999))
         sock.send(data)
         rdata = sock.recv(1024)
         sock.close()
         if(rdata[0] == 0x55 and rdata[1:5] == data[0:4]):
             logging.info("NVG SEND OK")
+            print("NVG SEND OK")
             db = postgres.NavtelecomDB.getInstance()
             db.markPacket(packet_id)
         else:
             logging.info('NVG ERROR')
+            print("NVG ERROR")
             logging.debug(rdata[0])
             logging.debug(rdata[1:5])
             logging.debug(data[0:4])

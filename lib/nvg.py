@@ -1,3 +1,5 @@
+import struct
+
 class NVG:
     def __init__(self):
         self.data = {}
@@ -10,8 +12,8 @@ class NVG:
     def addData(self,type:int,data:bytearray):
         self.data[type] = bytearray()
         length = len(data)
-        length = length.to_bytes(2, 'little')
-        dtype = type.to_bytes(1, 'little')
+        length = length.to_bytes(2, byteorder='little',signed=False)
+        dtype = type.to_bytes(1, byteorder='little',signed=False)
 
         for b in dtype:
             self.data[type].append(b)
@@ -48,8 +50,7 @@ class NVG:
         self.addData(0, imei)
         return
 
-    def addTime(self,time: bytearray):
-        time = int(time)
+    def addTime(self,time: int):
         time = time.to_bytes(4,byteorder='little',signed=False)
         self.addData(0x01,time)
         return
@@ -70,12 +71,12 @@ class NVG:
 
     def addCoordinates(self,lat:int,lon:int,alt:int,speed:int,course:int,satCount:int):
         data = bytearray()
-        data += int(lat).to_bytes(8, byteorder='little')
-        data += int(lon).to_bytes(8, byteorder='little')
-        data += int(alt).to_bytes(8, byteorder='little')
-        data += int(round(speed[0])).to_bytes(8, byteorder='little')
-        data += int(course).to_bytes(8, byteorder='little')
-        data += int(satCount).to_bytes(8, byteorder='little')
+        data += struct.pack('<d',(lon/600000))
+        data += struct.pack('<d',(lat/600000))
+        data += struct.pack('<d',(alt/600000))
+        data += int(round(speed[0])).to_bytes(2, byteorder='little')
+        data += int(course).to_bytes(2, byteorder='little')
+        data += int(satCount).to_bytes(1, byteorder='little')
         self.addData(3,data)
         return
 

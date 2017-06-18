@@ -266,6 +266,7 @@ class Navtelecom:
                 if (data[:2] == b'~T'):
                     telemetry = data[6:len(data) - 1]
                     decoded = self.decodeTelemetry(telemetry, client)
+                    print('T')
                     print(decoded)
                     self.sendToNVG(self.toNVG(imei,decoded,client['fields']),packet_id)
                 if (data[:2] == b'~X'):
@@ -278,6 +279,7 @@ class Navtelecom:
                 start = 3
                 while (count > 0):
                     if (data[:2] == b'~A'):
+                        print('A')
                         decoded = self.decodeTelemetry(data[start:start + size], client)
                         print(decoded)
                         self.sendToNVG(self.toNVG(imei, decoded, client['fields']),packet_id)
@@ -312,7 +314,11 @@ class Navtelecom:
         print('packet_id=' + str(packet_id))
         import socket
         self.sock.send(data)
+        print('data sended')
+        import time
+        time.sleep(5)
         rdata = self.sock.recv(1024)
+        print('data received')
         if(rdata[0] == 0x55 and rdata[1:5] == data[0:4]):
             logging.info("NVG SEND OK")
             print("NVG SEND OK")
@@ -324,3 +330,4 @@ class Navtelecom:
             logging.debug(rdata[0])
             logging.debug(rdata[1:5])
             logging.debug(data[0:4])
+        return

@@ -1,6 +1,7 @@
 import string
 import struct
 import logging
+import socket
 from lib import datadict
 from lib import crc8custom
 from lib import postgres
@@ -247,7 +248,8 @@ class Navtelecom:
             offset += f['size']
         return result
 
-    def decodeFlexFromDB(self):
+    def decodeFlexFromDB(self, sock: socket):
+        self.sock = sock
         db = postgres.NavtelecomDB.getInstance()
         packets = db.getNotDecodedPackets()
         for packet in packets:
@@ -309,11 +311,8 @@ class Navtelecom:
         logging.info('packet_id='+str(packet_id))
         print('packet_id=' + str(packet_id))
         import socket
-        sock = socket.socket()
-        sock.connect(('91.202.252.202', 2999))
-        sock.send(data)
-        rdata = sock.recv(1024)
-        sock.close()
+        self.sock.send(data)
+        rdata = self.sock.recv(1024)
         if(rdata[0] == 0x55 and rdata[1:5] == data[0:4]):
             logging.info("NVG SEND OK")
             print("NVG SEND OK")

@@ -63,7 +63,6 @@ class NavtelecomDB:
         return getFields(imei)
 
     def getNotDecodedPackets(self,limit = 0):
-        logging.info('querying not decoded packets')
         query = "select * from raw_packets where id > 7000 and processed = False order by timestamp ASC limit 1"
         if(limit != 0):
             query += " limit "+str(limit)

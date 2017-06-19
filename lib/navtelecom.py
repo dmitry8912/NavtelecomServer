@@ -248,8 +248,8 @@ class Navtelecom:
             offset += f['size']
         return result
 
-    def decodeFlexFromDB(self, sock: socket):
-        self.sock = sock
+    def decodeFlexFromDB(self, nvgFactory):
+        self.factory = nvgFactory
         db = postgres.NavtelecomDB.getInstance()
         packets = db.getNotDecodedPackets()
         for packet in packets:
@@ -266,8 +266,7 @@ class Navtelecom:
                 if (data[:2] == b'~T'):
                     telemetry = data[6:len(data) - 1]
                     decoded = self.decodeTelemetry(telemetry, client)
-                    print('T')
-                    print(decoded)
+                    logging.info('T')
                     self.sendToNVG(self.toNVG(imei,decoded,client['fields']),packet_id)
                 if (data[:2] == b'~X'):
                     telemetry = data[6:len(data) - 1]
@@ -279,9 +278,8 @@ class Navtelecom:
                 start = 3
                 while (count > 0):
                     if (data[:2] == b'~A'):
-                        print('A')
+                        logging.info('A')
                         decoded = self.decodeTelemetry(data[start:start + size], client)
-                        print(decoded)
                         self.sendToNVG(self.toNVG(imei, decoded, client['fields']),packet_id)
                     else:
                         if (data[:2] == b'~E'):
@@ -311,23 +309,5 @@ class Navtelecom:
 
     def sendToNVG(self,data:bytearray, packet_id):
         logging.info('packet_id='+str(packet_id))
-        print('packet_id=' + str(packet_id))
-        import socket
-        self.sock.send(data)
-        print('data sended')
-        import time
-        time.sleep(5)
-        rdata = self.sock.recv(1024)
-        print('data received')
-        if(rdata[0] == 0x55 and rdata[1:5] == data[0:4]):
-            logging.info("NVG SEND OK")
-            print("NVG SEND OK")
-            db = postgres.NavtelecomDB.getInstance()
-            db.markPacket(packet_id)
-        else:
-            logging.info('NVG ERROR')
-            print("NVG ERROR")
-            logging.debug(rdata[0])
-            logging.debug(rdata[1:5])
-            logging.debug(data[0:4])
+        self.factory.sendPacket(data,packet_id)
         return

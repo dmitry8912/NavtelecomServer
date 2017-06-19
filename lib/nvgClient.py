@@ -35,6 +35,7 @@ class NvgClient:
     def send(self, data: bytearray):
         try:
             self.s.send(data)
+            logging.info(str(data))
             rdata = self.s.recv(1024)
             if(rdata[0] == 0x55 and rdata[1:5] == data[0:4]):
                 logging.info('NVG OK')

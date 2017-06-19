@@ -6,6 +6,7 @@ from lib import datadict
 from lib import crc8custom
 from lib import postgres
 from lib import nvg
+from lib import nvgClient
 
 class Navtelecom:
     myId = 1
@@ -248,12 +249,12 @@ class Navtelecom:
             offset += f['size']
         return result
 
-    def decodeFlexFromDB(self, nvgFactory):
-        self.factory = nvgFactory
+    def decodeFlexFromDB(self):
         db = postgres.NavtelecomDB.getInstance()
         packets = db.getNotDecodedPackets()
         for packet in packets:
             packet_id = packet[0]
+            logging.info('packet_id='+str(packet_id))
             imei = str(packet[1]).encode()
             client = {'fields':db.getField(packet[1])[0][0]}
             data = packet[2]
@@ -308,6 +309,6 @@ class Navtelecom:
         return packet.getPacket()
 
     def sendToNVG(self,data:bytearray, packet_id):
-        logging.info('packet_id='+str(packet_id))
-        self.factory.sendPacket(data,packet_id)
+        if((nvgClient.NvgClient.getInstance()).send(data)):
+            (postgres.NavtelecomDB.getInstance()).markPacket(packet_id)
         return

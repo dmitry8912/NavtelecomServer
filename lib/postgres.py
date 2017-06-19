@@ -3,7 +3,7 @@ import logging
 class NavtelecomDB:
     _instance = None
     db_conf = {
-        "host": "192.168.0.41",
+        "host": "localhost",
         "port": "5432",
         "user": "navtelecom",
         "password": "navetlecom",
@@ -63,7 +63,8 @@ class NavtelecomDB:
         return getFields(imei)
 
     def getNotDecodedPackets(self,limit = 0):
-        query = "select * from raw_packets where processed = False and timestamp >= '2017-06-16'::date limit 10"
+        logging.info('querying not decoded packets')
+        query = "select * from raw_packets where id > 7000 order by timestamp ASC limit 1"
         if(limit != 0):
             query += " limit "+str(limit)
         packets = self.db.prepare(query)

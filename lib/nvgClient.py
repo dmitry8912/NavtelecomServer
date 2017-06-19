@@ -44,3 +44,10 @@ class NvgClient:
         except socket.timeout:
             self.s.close()
             self.connect()
+        except IndexError:
+            logging.info('Server returns nothing. Reconnecting.')
+            self.s.close()
+            self.s = socket.socket()
+            self.s.settimeout(3)
+            self.connect()
+            return False

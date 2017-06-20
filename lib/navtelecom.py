@@ -259,8 +259,10 @@ class Navtelecom:
             client = {'fields':db.getField(packet[1])[0][0]}
             data = packet[2]
             if (data[:2] == b'~C'):
+                logging.info('C')
                 telemetry = data[2:len(data) - 1]
                 decoded = self.decodeTelemetry(telemetry, client)
+                self.sendToNVG(self.toNVG(imei, decoded, client['fields']), packet_id)
 
                 # decode alarm package and\or additional package
             if (data[:2] == b'~T' or data[:2] == b'~X'):
@@ -270,8 +272,10 @@ class Navtelecom:
                     logging.info('T')
                     self.sendToNVG(self.toNVG(imei,decoded,client['fields']),packet_id)
                 if (data[:2] == b'~X'):
-                    telemetry = data[6:len(data) - 1]
+                    telemetry = data[10:len(data) - 1]
                     decoded = self.decodeAdditionalTelemetry(telemetry)
+                    logging.info('X')
+                    self.sendToNVG(self.additionalToNVG(imei, decoded), packet_id)
             else:
                 # decode array and array of additional packages
                 size = int(len(data[3:-1]) / data[2])
@@ -284,31 +288,73 @@ class Navtelecom:
                         self.sendToNVG(self.toNVG(imei, decoded, client['fields']),packet_id)
                     else:
                         if (data[:2] == b'~E'):
-                            decoded = self.decodeAdditionalTelemetry(data[start:start + size])
+                            decoded = self.decodeAdditionalTelemetry(data[start+4:start + size])
+                            logging.info('E')
+                            self.sendToNVG(self.additionalToNVG(imei, decoded), packet_id)
                     start += size
                     count -= 1
+                logging.info('decoding many-field package ended')
 
     def toNVG(self,imei: bytearray, data: list, fields: list):
         packet = nvg.NVG()
         packet.addIdentifier(imei)
-        for f in fields:
-            if(f == 3):
-                packet.addTime(data[f]['value'])
-        packet.addCoordinates(data[10]['value'],data[11]['value'],1,data[13]['value'],data[14]['value'],int.from_bytes(data[8]['bytes'],byteorder='little') ^ 0b11000000)
+        packet.addTime(data[9]['value'])
+        packet.addCoordinates(data[10]['value'],data[11]['value'],data[12]['value'],data[13]['value'],data[14]['value'],int.from_bytes(data[8]['bytes'],byteorder='little') ^ 0b11000000)
+        stand = True
+        if(108 in data and data[108]['value'] != -32768):
+            stand = False
+        packet.addState(False,int.from_bytes(data[5]['bytes'],byteorder='little') >> 7,stand)
+        gsm_level = int.from_bytes(data[7]['bytes'],byteorder='little')
+        if(gsm_level == 99):
+            packet.addGSM(0)
+        if (gsm_level == 31):
+            packet.addGSM(-51)
+        if (gsm_level == 0):
+            packet.addGSM(-113)
+        if (gsm_level == 1):
+            packet.addGSM(-111)
+        if (gsm_level >= 2 and gsm_level <= 30):
+            packet.addGSM((-1)*round((53*gsm_level)/30))
+        if (19 in data):
+            packet.addOutsideVoltage(round(data[19]['value']/1000))
+        if (20 in data):
+            packet.addBatteryVoltage(round(data[20]['value']/1000))
+
+        if(29 in data and 30 in data):
+            packet.addDigitalInputsStateFromFlex(bytearray(data[29]['bytes']+data[30]['bytes']))
+        else:
+            if (29 in data):
+                packet.addDigitalInputsStateFromFlex(bytearray(data[29]['bytes']))
+            if (30 in data):
+                packet.addDigitalInputsStateFromFlex(bytearray(data[30]['bytes']))
+
+        if(31 in data and 32 in data):
+            packet.addDigitalOutputsStateFromFlex(bytearray(data[31]['bytes'] + data[32]['bytes']))
+        else:
+            if (31 in data):
+                packet.addDigitalOutputsStateFromFlex(bytearray(data[31]['bytes']))
+            if (32 in data):
+                packet.addDigitalOutputsStateFromFlex(bytearray(data[32]['bytes']))
+
+        if(35 in data and 36 in data):
+            packet.addFuelLevel([data[35]['value'],data[36]['value']])
+        else:
+            if (35 in data):
+                packet.addFuelLevel([data[35]['value']])
+            if (36 in data):
+                packet.addFuelLevel([data[36]['value']])
         return packet.getPacket()
 
     def additionalToNVG(self,imei,data: list):
         packet = nvg.NVG()
         packet.addIdentifier(imei)
-        for f, v in data:
-            if(f == 3):
-                packet.addTime(data[f]['value'])
-            if(f == 2):
-                return
-        packet.addCoordinates(data[5]['value'],data[6]['value'],data[7]['value'],data[8]['value'],data[8] ^ 0b11000000)
+        packet.addTime(data[4]['value'])
+        packet.addCoordinates(data[5]['value'], data[6]['value'], data[7]['value'], data[8]['value'], data[9]['value'],int.from_bytes(data[3]['bytes'], byteorder='little') ^ 0b11000000)
         return packet.getPacket()
 
     def sendToNVG(self,data:bytearray, packet_id):
-        if((nvgClient.NvgClient.getInstance()).send(data)):
-            (postgres.NavtelecomDB.getInstance()).markPacket(packet_id)
+        logging.debug(str(data))
+        # if((nvgClient.NvgClient.getInstance()).send(data)):
+        #     (postgres.NavtelecomDB.getInstance()).markPacket(packet_id)
+        #     return
         return

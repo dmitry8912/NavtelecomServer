@@ -16,11 +16,9 @@ class NavtelecomProtocol(LineReceiver, TimeoutMixin):
         return self.transport.getPeer().host
 
     def connectionMade(self):
-        print("New connection from "+self.getName())
         self.setTimeout(30)
 
     def connectionLost(self, reason):
-        print("Lost connection from "+self.getName())
         if(self in self.factory.clientProtocols):
             self.factory.clientProtocols.remove(self)
         self.factory.ntc.disconnect(self)
@@ -46,10 +44,9 @@ class NavtelecomProtocol(LineReceiver, TimeoutMixin):
                 self.factory.clientProtocols.append(self)
                 self.factory.ntc.makeHandshake(self)
             else:
-                print("Error!")
+                return
 
     def timeoutConnection(self):
-        print("Сonnection timeout from:" + self.getName())
         self.transport.abortConnection()
 
 

@@ -29,7 +29,7 @@ class NvgClient:
             self.s = socket.socket()
             self.s.settimeout(3)
             self.connect()
-            logging.error("Socket can`t connect!")
+            logging.error("Socket can`t connect! Reconnected.")
         return
 
     def send(self, data: bytearray):

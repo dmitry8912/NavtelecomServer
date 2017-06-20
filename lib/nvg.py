@@ -58,13 +58,13 @@ class NVG:
     def addState(self,sosState: bool, engineState: bool, standState: bool):
         state = 0b00000000
         if(sosState):
-            state += 0b00000001
+            state += 0b10000000
 
         if(engineState):
-            state += 0b00000010
+            state += 0b01000000
 
         if(standState):
-            state += 0b00000100
+            state += 0b00100000
 
         self.addData(2,state.to_bytes(2,byteorder='little'))
         return
@@ -73,7 +73,7 @@ class NVG:
         data = bytearray()
         data += struct.pack('<d',(lon/600000))
         data += struct.pack('<d',(lat/600000))
-        data += struct.pack('<d',(alt/600000))
+        data += struct.pack('<d',(alt))
         data += int(round(speed[0])).to_bytes(2, byteorder='little')
         data += int(course).to_bytes(2, byteorder='little')
         data += int(satCount).to_bytes(1, byteorder='little')
@@ -81,16 +81,16 @@ class NVG:
         return
 
     def addGSM(self,signalLevel: int):
-        gsm = signalLevel.to_bytes(2,'little',True)
+        gsm = signalLevel.to_bytes(2,byteorder='little',signed=True)
         self.addData(4,gsm)
         return
 
-    def addOutsideVoltage(self, level):
+    def addOutsideVoltage(self, level: int):
         gsm = level.to_bytes(2, 'little')
         self.addData(5, gsm)
         return
 
-    def addBatteryVoltage(self, level):
+    def addBatteryVoltage(self, level: int):
         gsm = level.to_bytes(2, 'little')
         self.addData(6, gsm)
         return
@@ -113,12 +113,31 @@ class NVG:
         self.addData(8,data)
         return
 
-    def addADCState(self,state):
+    def addDigitalInputsStateFromFlex(self, states:bytearray):
+        self.addData(7,states)
         return
 
-    def addDriverCode(self, code):
+    def addDigitalOutputsStateFromFlex(self, states:bytearray):
+        self.addData(8,states)
         return
 
-    def addFuelLevel(self, level):
+    def addADCState(self,states: bytearray):
+        data = bytearray()
+        num = 1
+        for b in states:
+            data.append(num.to_bytes(1,byteorder='little',signed=False))
+            data.append(struct.pack('<d',int.from_bytes(b,byteorder='little',signed=False)/1000))
+        self.addData(9,data)
         return
 
+    def addDriverCode(self, code:str):
+        self.addData(10,code)
+        return
+
+    def addFuelLevel(self, level: list):
+        data = bytearray()
+        for el in level:
+            data += int(level.index(el)+1).to_bytes(1,byteorder='little',signed=False)
+            data += struct.pack('<d',float(el))
+        self.addData(11,data)
+        return

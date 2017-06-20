@@ -353,8 +353,7 @@ class Navtelecom:
         return packet.getPacket()
 
     def sendToNVG(self,data:bytearray, packet_id):
-        logging.debug(str(data))
-        # if((nvgClient.NvgClient.getInstance()).send(data)):
-        #     (postgres.NavtelecomDB.getInstance()).markPacket(packet_id)
-        #     return
+        if((nvgClient.NvgClient.getInstance()).send(data)):
+            (postgres.NavtelecomDB.getInstance()).markPacket(packet_id)
+            return
         return

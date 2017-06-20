@@ -63,7 +63,7 @@ class NavtelecomDB:
         return getFields(imei)
 
     def getNotDecodedPackets(self,limit = 0):
-        query = "select * from raw_packets where processed = False order by timestamp ASC limit 1"
+        query = "select * from raw_packets where processed = False order by timestamp ASC limit 10"
         if(limit != 0):
             query += " limit "+str(limit)
         packets = self.db.prepare(query)

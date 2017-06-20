@@ -299,7 +299,10 @@ class Navtelecom:
         packet = nvg.NVG()
         packet.addIdentifier(imei)
         packet.addTime(data[9]['value'])
-        packet.addCoordinates(data[10]['value'],data[11]['value'],data[12]['value'],data[13]['value'],data[14]['value'],int.from_bytes(data[8]['bytes'],byteorder='little') ^ 0b11000000)
+        alt = 1
+        if(12 in data):
+            alt = data[12]['value']
+        packet.addCoordinates(data[10]['value'],data[11]['value'],alt,data[13]['value'],data[14]['value'],int.from_bytes(data[8]['bytes'],byteorder='little') ^ 0b11000000)
         stand = True
         if(108 in data and data[108]['value'] != -32768):
             stand = False

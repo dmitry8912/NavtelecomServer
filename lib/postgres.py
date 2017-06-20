@@ -69,6 +69,11 @@ class NavtelecomDB:
         packets = self.db.prepare(query)
         return packets()
 
+    def getUnhandledPacketsCount(self):
+        query = "select count(*) from raw_packets where processed = False"
+        packets = self.db.prepare(query)
+        return packets()
+
     def markPacket(self,packet_id):
         markPacket = self.db.prepare(
             "UPDATE raw_packets SET processed = True where id=$1")

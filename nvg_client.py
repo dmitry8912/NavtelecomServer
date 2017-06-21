@@ -2,7 +2,6 @@ from lib import navtelecom
 from lib import postgres
 from tendo import singleton
 import logging
-import time
 
 me = singleton.SingleInstance()
 ntc = navtelecom.Navtelecom()
@@ -14,8 +13,5 @@ while(True):
         logging.info('decoding')
         ntc.decodeFlexFromDB()
     else:
-        time.sleep(5)
-        t = (postgres.NavtelecomDB.getInstance()).getUnhandledPacketsCount()
-        if(t[0][0] < 0):
-            logging.info('SCRIPT END')
-            break
+        logging.info('SCRIPT END')
+        break

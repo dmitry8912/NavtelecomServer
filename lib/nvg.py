@@ -92,8 +92,11 @@ class NVG:
         return
 
     def addBatteryVoltage(self, level: int):
-        level = round(((int(round(level/100))/4.2)*1000)%100)*10
-        gsm = level.to_bytes(2, 'little')
+        if(level > 4200):
+            level = 100
+        else:
+            level = round((level/4200)*100)
+        gsm = level.to_bytes(2, byteorder='little',signed = False)
         self.addData(6, gsm)
         return
 

@@ -5,7 +5,8 @@ import logging
 
 me = singleton.SingleInstance()
 ntc = navtelecom.Navtelecom()
-logging.basicConfig(format = u'%(levelname)-8s [%(asctime)s] %(message)s', level = logging.DEBUG, filename = u'/var/sr-nav/navtelecom/NVGC_client.log')
+logging.basicConfig(format = u'%(levelname)-8s [%(asctime)s] %(message)s', level = logging.DEBUG, filename = u'NVGC_client.log')
+ntc.decodeFlexFromDB()
 while(True):
     t = (postgres.NavtelecomDB.getInstance()).getUnhandledPacketsCount()
     logging.info('located '+str(t[0][0])+' enties')

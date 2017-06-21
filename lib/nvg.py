@@ -86,11 +86,13 @@ class NVG:
         return
 
     def addOutsideVoltage(self, level: int):
+        level = int(round(level / 100))
         gsm = level.to_bytes(2, 'little')
         self.addData(5, gsm)
         return
 
     def addBatteryVoltage(self, level: int):
+        level = round(((int(round(level/100))/4.2)*1000)%100)*10
         gsm = level.to_bytes(2, 'little')
         self.addData(6, gsm)
         return

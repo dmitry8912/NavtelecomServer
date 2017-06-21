@@ -342,7 +342,7 @@ class Navtelecom:
         adcStates = []
         for f in range(21,29):
             if(f in data):
-                adcStates.append(f)
+                adcStates.append(data[f]['value'])
         packet.addADCState(adcStates)
 
         if(35 in data and 36 in data):

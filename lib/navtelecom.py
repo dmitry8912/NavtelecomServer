@@ -304,6 +304,7 @@ class Navtelecom:
             alt = data[12]['value']
         packet.addCoordinates(data[10]['value'],data[11]['value'],alt,data[13]['value'],data[14]['value'],int.from_bytes(data[8]['bytes'],byteorder='little') ^ 0b11000000)
         logging.debug('accelerometer 107 data = '+str(data[107]))
+        logging.debug('accelerometer 109 data = ' + str(data[109]))
         if(int.from_bytes(data[107]['bytes'],byteorder='little') != 0):
             logging.debug('accelerometer result = ' + str(data[107]))
         stand = True

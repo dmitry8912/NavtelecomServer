@@ -100,7 +100,7 @@ class NVG:
         if(level > 4200):
             level = 100
         else:
-            level = round((level/4200)*100)
+            level = round(((level/4200)*100)%100)
         logging.debug('Battery Voltage Comp = ' + str(level))
         gsm = level.to_bytes(2, byteorder='little',signed = False)
         logging.debug('Battery Voltage Bytes = ' + str(level))

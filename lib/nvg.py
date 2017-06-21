@@ -114,18 +114,26 @@ class NVG:
         return
 
     def addDigitalInputsStateFromFlex(self, states:bytearray):
-        self.addData(7,states)
+        if(len(states) != 2):
+            states = int.from_bytes(states,byteorder='little')
+            states = states.to_bytes(2,byteorder='little',signed=False)
+        self.addData(7, states)
         return
 
     def addDigitalOutputsStateFromFlex(self, states:bytearray):
+        if(len(states) != 2):
+            states = int.from_bytes(states,byteorder='little')
+            states = states.to_bytes(2,byteorder='little',signed=False)
         self.addData(8,states)
         return
 
     def addADCState(self,states: list):
         data = bytearray()
+        num = 1
         for b in states:
-            data += int(states.index(b) + 1).to_bytes(1, byteorder='little', signed=False)
-            data += struct.pack('<d', float(b/1000))
+            data += int(num).to_bytes(1, byteorder='little', signed=False)
+            data += struct.pack('<d', float(b/100))
+            num += 1
         self.addData(9,data)
         return
 
@@ -135,8 +143,10 @@ class NVG:
 
     def addFuelLevel(self, level: list):
         data = bytearray()
+        num = 1
         for el in level:
-            data += int(level.index(el)+1).to_bytes(1,byteorder='little',signed=False)
+            data += int(num).to_bytes(1,byteorder='little',signed=False)
             data += struct.pack('<d',float(el))
+            num += 1
         self.addData(11,data)
         return

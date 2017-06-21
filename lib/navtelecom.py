@@ -319,9 +319,9 @@ class Navtelecom:
         if (gsm_level >= 2 and gsm_level <= 30):
             packet.addGSM((-1)*round((53*gsm_level)/30))
         if (19 in data):
-            packet.addOutsideVoltage(round(data[19]['value']/1000))
+            packet.addOutsideVoltage(data[19]['value'])
         if (20 in data):
-            packet.addBatteryVoltage(round(data[20]['value']/1000))
+            packet.addBatteryVoltage(data[20]['value'])
 
         if(29 in data and 30 in data):
             packet.addDigitalInputsStateFromFlex(bytearray(data[29]['bytes']+data[30]['bytes']))

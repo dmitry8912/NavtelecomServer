@@ -121,12 +121,11 @@ class NVG:
         self.addData(8,states)
         return
 
-    def addADCState(self,states: bytearray):
+    def addADCState(self,states: list):
         data = bytearray()
-        num = 1
         for b in states:
-            data.append(num.to_bytes(1,byteorder='little',signed=False))
-            data.append(struct.pack('<d',int.from_bytes(b,byteorder='little',signed=False)/1000))
+            data += int(states.index(b) + 1).to_bytes(1, byteorder='little', signed=False)
+            data += struct.pack('<d', float(b/1000))
         self.addData(9,data)
         return
 

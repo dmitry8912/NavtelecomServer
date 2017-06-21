@@ -339,6 +339,12 @@ class Navtelecom:
             if (32 in data):
                 packet.addDigitalOutputsStateFromFlex(bytearray(data[32]['bytes']))
 
+        adcStates = []
+        for f in range(21,29):
+            if(f in data):
+                adcStates.append(f)
+        packet.addADCState(adcStates)
+
         if(35 in data and 36 in data):
             packet.addFuelLevel([data[35]['value'],data[36]['value']])
         else:

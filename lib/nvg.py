@@ -97,10 +97,10 @@ class NVG:
 
     def addBatteryVoltage(self, level: int):
         logging.debug('Battery Voltage Raw = ' + str(level))
-        if(level > 4200):
-            level = 100
-        else:
-            level = round(((level/4200)*100)%100)
+        # if(level > 4200):
+        #     level = 100
+        # else:
+        #     level = round(((level/4200)*100)%100)
         logging.debug('Battery Voltage Comp = ' + str(level))
         gsm = level.to_bytes(2, byteorder='little',signed = False)
         logging.debug('Battery Voltage Bytes = ' + str(level))

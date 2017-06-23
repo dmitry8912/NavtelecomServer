@@ -14,3 +14,6 @@ class Simple(resource.Resource):
         request.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Content-Type, Origin, Authorization, Accept, Client-Security-Token, Accept-Encoding')
         request.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE, PUT')
         return self.server.getCurrentStateInfo()
+
+    def render_POST(self,request):
+        return

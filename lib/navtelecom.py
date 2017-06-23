@@ -298,7 +298,7 @@ class Navtelecom:
     def toNVG(self,imei: bytearray, data: list, fields: list):
         packet = nvg.NVG()
         packet.addIdentifier(imei)
-        packet.addTime(data[9]['value'])
+        packet.addTime(data[3]['value'])
         alt = 1
         if(12 in data):
             alt = data[12]['value']
@@ -363,7 +363,7 @@ class Navtelecom:
     def additionalToNVG(self,imei,data: list):
         packet = nvg.NVG()
         packet.addIdentifier(imei)
-        packet.addTime(data[4]['value'])
+        packet.addTime(data[2]['value'])
         packet.addCoordinates(data[5]['value'], data[6]['value'], data[7]['value'], data[8]['value'], data[9]['value'],int.from_bytes(data[3]['bytes'], byteorder='little') ^ 0b11000000)
         return packet.getPacket()
 

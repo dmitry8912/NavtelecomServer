@@ -1,5 +1,6 @@
 import postgresql
 import logging
+import json
 class NavtelecomDB:
     _instance = None
     db_conf = {
@@ -87,3 +88,19 @@ class NavtelecomDB:
     def getLastPacket(self):
         query = self.db.prepare("select TO_CHAR(timestamp, 'DD.MM.YYYY HH24:MI:SS') as lasttime from raw_packets order by timestamp DESC limit 1");
         return query()
+
+    def getVendorsList(self):
+        vendorList = self.db.prepare('SELECT array_to_json(array_agg("Vendors")) FROM "Vendors"')
+        return json.loads(vendorList()[0][0])
+
+    def addVendor(self,name:str):
+        vendorAdd = self.db.prepare("SELECT vendor_add($1)")
+        return vendorAdd(name)[0][0]
+
+    def updateVendor(self,id:int,name:str):
+        vendor = self.db.prepare("SELECT vendor_update($1,$2)")
+        return vendor(id,name)[0][0]
+
+    def deleteVendor(self,id:int):
+        vendor = self.db.prepare("SELECT vendor_delete($1)")
+        return vendor(id)[0][0]

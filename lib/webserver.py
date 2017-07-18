@@ -14,7 +14,7 @@ class Simple(resource.Resource):
         request.setHeader('Access-Control-Max-Age', '1000')
         request.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Content-Type, Origin, Authorization, Accept, Client-Security-Token, Accept-Encoding')
         request.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE, PUT')
-        if(len(request.postpath) == 0):
+        if(len(request.postpath) == 1 and request.postpath[0] == b''):
             return self.server.getCurrentStateInfo()
         else:
             return gw.executeQuery(request.postpath[0], request.args)

@@ -94,7 +94,7 @@ class NavtelecomDB:
         return json.loads(vendorList()[0][0])
 
     def addVendor(self,name:str):
-        vendorAdd = self.db.prepare("SELECT vendor_add($1)")
+        vendorAdd = self.db.prepare("SELECT vendor_add_ret_id($1)")
         return vendorAdd(name)[0][0]
 
     def updateVendor(self,id:int,name:str):

@@ -104,3 +104,19 @@ class NavtelecomDB:
     def deleteVendor(self,id:int):
         vendor = self.db.prepare("SELECT vendor_delete($1)")
         return vendor(id)[0][0]
+
+    def getModelsList(self):
+        modelsList = self.db.prepare('SELECT array_to_json(array_agg(models_list)) FROM (SELECT "Vendor_Models".id AS model_id, "Vendors".id AS vendor_id, "Vendor_Models".name AS model_name, "Vendors".name AS vendor_name FROM "Vendors", "Vendor_Models" WHERE "Vendors".id = "Vendor_Models".vendor_id) models_list;')
+        return json.loads(modelsList()[0][0])
+
+    def addModel(self,name:str, vendor_id:int):
+        modelAdd = self.db.prepare("SELECT model_add($1,$2)")
+        return modelAdd(name, vendor_id)[0][0]
+
+    def updateModel(self,name:str, id:int, vendor_id:int = -1):
+        modelUpdate = self.db.prepare("SELECT model_update($1,$2,$3)")
+        return modelUpdate(id,name, vendor_id)[0][0]
+
+    def deleteModel(self,id:int):
+        model = self.db.prepare("SELECT model_delete($1)")
+        return model(id)[0][0]

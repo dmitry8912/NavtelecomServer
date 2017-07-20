@@ -51,9 +51,19 @@ class Gateway:
                 model = (postgres.NavtelecomDB.getInstance()).deleteModel(int(args[b'id'][0].decode()))
                 return (json.dumps({'status':'ok','result':model})).encode()
 
+            # il_kow - Получить все устройства
+            if query == b'devices_list':
+                devices = (postgres.NavtelecomDB.getInstance()).getDevicesList()
+                return (json.dumps({'status':'ok','result':devices})).encode()
+
+            # il_kow - Добавить устройство
+            if query == b'device_add':
+                model = (postgres.NavtelecomDB.getInstance()).addModel(int(args[b'imei'][0].decode()))
+                return (json.dumps({'status':'ok','result':model})).encode()
+
         except postgresql.exceptions.SyntaxError as ex:
             return (json.dumps({'status': 'fail', 'error':str(ex)})).encode()
         except postgresql.exceptions.ForeignKeyError as fk_ex:
             return (json.dumps({'status': 'fail', 'error': str(fk_ex)})).encode()
-        #default - not found
+        # default - not found
         return (json.dumps({'status':'not_found'})).encode()

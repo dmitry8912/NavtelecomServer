@@ -120,3 +120,13 @@ class NavtelecomDB:
     def deleteModel(self,id:int):
         model = self.db.prepare("SELECT model_delete($1)")
         return model(id)[0][0]
+
+    # il_kow: Получить список всех устройств
+    def getDevicesList(self):
+        devicesList = self.db.prepare('SELECT array_to_json(array_agg(devices_list)) FROM (SELECT "devices".imei as imei, "devices".ntcb_id as ntcb, "devices".lastseen as lastseen, "devices".model_id as model_id, "devices".number as num FROM "devices";')
+        return json.loads(devicesList()[0][0])
+
+    # il_kow: Добавить устройство
+    def addDevice(self, imei:int):
+        device_add = self.db.prepare("SELECT device_add($1)")
+        return device_add(imei)[0][0]

@@ -4,7 +4,7 @@ import json
 class NavtelecomDB:
     _instance = None
     db_conf = {
-        "host": "localhost",
+        "host": "192.168.0.41",
         "port": "5432",
         "user": "navtelecom",
         "password": "navetlecom",
@@ -123,10 +123,34 @@ class NavtelecomDB:
 
     # il_kow: Получить список всех устройств
     def getDevicesList(self):
-        devicesList = self.db.prepare('SELECT array_to_json(array_agg(devices_list)) FROM (SELECT "devices".imei as imei, "devices".ntcb_id as ntcb, "devices".lastseen as lastseen, "devices".model_id as model_id, "devices".number as num FROM "devices";')
+        devicesList = self.db.prepare('SELECT array_to_json(array_agg(devices_list)) '
+                                      'FROM (SELECT  "devices".imei as imei, '
+                                                    '"devices".ntcb_id as ntcb_id, '
+                                                    '"devices".lastseen as last_seen, '
+                                                    '"devices".model_id as model_id, '
+                                                    '"devices".number as num, '
+                                                    '"Vendor_Models".name as model_name '
+                                                    'FROM "Vendor_Models", "devices" '
+                                                    'WHERE "Vendor_Models".id = "devices".model_id)'
+                                      ' devices_list;')
         return json.loads(devicesList()[0][0])
 
     # il_kow: Добавить устройство
     def addDevice(self, imei:int):
         device_add = self.db.prepare("SELECT device_add($1)")
         return device_add(imei)[0][0]
+
+    # il_kow: Обновить устройство
+    def updateDevice(self, imei:int, ntcb_id:int, number:str, model_id:int):
+        deviceUpdate = self.db.prepare("SELECT device_update($1, $2, $3, $4)")
+        return deviceUpdate(imei, ntcb_id, number, model_id)[0][0]
+
+    # il_kow: Добавить устройство (метод new device)
+    def newDevice(self, imei:int, model_id:int):
+        device_add = self.db.prepare("SELECT device_new($1, $2)")
+        return device_add(imei, model_id)[0][0]
+
+    # il_kow: Удалить устройство
+    def deleteDevice(self, imei:int):
+        device_delete = self.db.prepare("SELECT device_delete($1)")
+        return device_delete(imei)[0][0]

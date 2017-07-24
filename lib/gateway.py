@@ -61,6 +61,21 @@ class Gateway:
                 model = (postgres.NavtelecomDB.getInstance()).addModel(int(args[b'imei'][0].decode()))
                 return (json.dumps({'status':'ok','result':model})).encode()
 
+            # il_kow - Обновить устройство
+            if (query == b'device_update'):
+                device = (postgres.NavtelecomDB.getInstance()).updateDevice(int(args[b'imei'][0].decode()), int(args[b'ntcb_id'][0].decode()), args[b'number'][0].decode(), int(args[b'model_id'][0].decode()))
+                return (json.dumps({'status':'ok', 'result':device})).encode()
+
+            # il_kow - Добавить устройство (postgres функция device_new)
+            if query == b'device_new':
+                device = (postgres.NavtelecomDB.getInstance()).newDevice(int(args[b'imei'][0].decode()), int(args[b'model_id'][0].decode()))
+                return (json.dumps({'status':'ok', 'result':device})).encode()
+
+            # il_kow - Удалить утсройство
+            if query == b'device_delete':
+                device = (postgres.NavtelecomDB.getInstance()).deleteDevice(int(args[b'imei'][0].decode()))
+                return (json.dumps({'status':'ok', 'result':device})).encode()
+
         except postgresql.exceptions.SyntaxError as ex:
             return (json.dumps({'status': 'fail', 'error':str(ex)})).encode()
         except postgresql.exceptions.ForeignKeyError as fk_ex:

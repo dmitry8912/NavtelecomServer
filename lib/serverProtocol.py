@@ -23,15 +23,16 @@ class NavtelecomProtocol(LineReceiver, TimeoutMixin):
             self.factory.clientProtocols.remove(self)
         self.factory.ntc.disconnect(self)
 
+    # Получает данные (line) Если прочитывает - разбирает пакет
     def dataReceived(self, line):
         self.resetTimeout()
         #self.factory.clientProtocols.append(self)
         data = self.factory.ntc.read(line,self)
         if(self in self.factory.clientProtocols):
-            if (int.from_bytes(line, byteorder='little') == 0x7f):
+            if (int.from_bytes(line, byteorder='little') == 0x7f): # Поддержание связи
                 #just ping message
                 return
-            if(b'*>FLEX' in line):
+            if(b'*>FLEX' in line): # Запрос на установление соединения в формате Flex
                 self.factory.ntc.coordinateFlexVersion(data,self)
             else:
                 if(b'~' in line[0:1]):

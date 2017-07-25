@@ -101,11 +101,12 @@ class Navtelecom:
         ntp.transport.write(data)
         return
 
+    # Разбирает сообщение в формате Flex
     def flexExec(self,data,connection):
         if(not self.checkCRC(data)):
             print('CRC Corrupt')
             return
-        else:
+        else: # TODO: Здесь запустить проверку на наличие прибора в БД по imei
             db = postgres.NavtelecomDB.getInstance()
             db.addRawPacket(self.getImei(connection),data)
             connection.transport.write(self.formAnswer(data))

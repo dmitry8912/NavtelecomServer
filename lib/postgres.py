@@ -154,3 +154,16 @@ class NavtelecomDB:
     def deleteDevice(self, imei:int):
         device_delete = self.db.prepare("SELECT device_delete($1)")
         return device_delete(imei)[0][0]
+
+    # il_kow: Получить все модели определенного устройства
+    def getModelsListByVendor(self, vendor_id:int):
+        modelsList = self.db.prepare('SELECT array_to_json(array_agg(models_list)) '
+                                     'FROM ('
+                                        'SELECT "Vendor_Models".id AS model_id, '
+                                        '"Vendors".id AS vendor_id, '
+                                        '"Vendor_Models".name AS model_name, '
+                                        '"Vendors".name AS vendor_name '
+                                     'FROM "Vendors", "Vendor_Models" '
+                                     'WHERE "Vendors".id = "Vendor_Models".vendor_id and "Vendor_Models".vendor_id = $1)'
+                                     'models_list;')
+        return json.loads(modelsList(vendor_id)[0][0])

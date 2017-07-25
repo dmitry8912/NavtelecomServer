@@ -76,6 +76,11 @@ class Gateway:
                 device = (postgres.NavtelecomDB.getInstance()).deleteDevice(int(args[b'imei'][0].decode()))
                 return (json.dumps({'status':'ok', 'result':device})).encode()
 
+            # il_kow - Получить все модели по id производителя
+            if query == b'get_vendor_models':
+                models = (postgres.NavtelecomDB.getInstance()).getModelsListByVendor(int(args[b'vendor_id'][0].decode()))
+                return (json.dumps({'status': 'ok', 'result': models})).encode()
+
         except postgresql.exceptions.SyntaxError as ex:
             return (json.dumps({'status': 'fail', 'error':str(ex)})).encode()
         except postgresql.exceptions.ForeignKeyError as fk_ex:

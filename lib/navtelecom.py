@@ -76,6 +76,7 @@ class Navtelecom:
     def int_to_byte_arrray(self, num: int, length: int):
         return num.to_bytes(length, byteorder='little')
 
+    # read - запуск
     def read(self, response: bytearray, connection):
         if(len(response) < 16):
             return False
@@ -87,11 +88,12 @@ class Navtelecom:
         if(data_checksum != response[14]):
             return False
 
+        # Если нет в подключенных клиентах, то пустить далее
         if(self.getClient(connection) == None):
             self.clients.update({ response[20:]: connection })
             self.connected.update({ response[20:]: { 'id':response[8:12], 'preambule': response[0:4], 'fields': [] }})
-            db = postgres.NavtelecomDB.getInstance()
-            db.connectDevice(response[20:],response[8:12])
+            db = postgres.NavtelecomDB.getInstance() # Автоматический создает новое устройство, если такого не существует. TODO: можно убрать, так как устройства будут вноситься вручную
+            db.connectDevice(response[20:],response[8:12]) # Автоматический создает новое устройство, если такого не существует. TODO: можно убрать, так как устройства будут вноситься вручную
 
         return response[16:len(response)]
 
@@ -106,17 +108,19 @@ class Navtelecom:
         if(not self.checkCRC(data)):
             print('CRC Corrupt')
             return
-        else: # TODO: Здесь запустить проверку на наличие прибора в БД по imei
+        else:
             db = postgres.NavtelecomDB.getInstance()
-            db.addRawPacket(self.getImei(connection),data)
+            imeiToCheck = self.getImei(connection) # il_kow Проверка на наличие устройства в БД
+            if db.imeiToCheck(int(imeiToCheck)):
+                db.addRawPacket(self.getImei(connection),data)
             connection.transport.write(self.formAnswer(data))
         client = self.getClient(connection)
-        #decode current state
+        # decode current state
         if(data[:2] == b'~C'):
             telemetry = data[2:len(data) - 1]
             decoded = self.decodeTelemetry(telemetry, client)
 
-        #decode alarm package and\or additional package
+        # decode alarm package and\or additional package
         if (data[:2] == b'~T' or data[:2] == b'~X'):
             if(data[:2] == b'~T'):
                 telemetry = data[6:len(data) - 1]
@@ -158,10 +162,12 @@ class Navtelecom:
                         fields.append(fieldnum)
                     j = j >> 1
                     fieldnum += 1
-            imei = self.getImei(connection)
+            imei = self.getImei(connection)  # il_kow Проверка на наличие устройства в БД
             self.connected[imei]['fields'] = fields
-            db = postgres.NavtelecomDB.getInstance()
-            db.setFields(imei,fields)
+            db = postgres.NavtelecomDB.getInstance() # TODO: Если device отсутствует, то не записывать данные в device_fieldset
+            imeiToCheck = self.getImei(connection)
+            if db.imeiToCheck(int(imei)):
+                db.setFields(imei,fields)
         #FLEX 2.0 struct 2.0
         response = bytearray(b'*<FLEX')
         response.append(0xB0)

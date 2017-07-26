@@ -1,0 +1,11 @@
+NTCC_server.log
+lib/__pycache__/__init__.cpython-36.pyc
+lib/__pycache__/crc8custom.cpython-36.pyc
+lib/__pycache__/datadict.cpython-36.pyc
+lib/__pycache__/gateway.cpython-36.pyc
+lib/__pycache__/navtelecom.cpython-36.pyc
+lib/__pycache__/nvg.cpython-36.pyc
+lib/__pycache__/nvgClient.cpython-36.pyc
+lib/__pycache__/postgres.cpython-36.pyc
+lib/__pycache__/serverProtocol.cpython-36.pyc
+lib/__pycache__/webserver.cpython-36.pyc

@@ -34,9 +34,6 @@ class NavtelecomDB:
         logging.info('Device send packet: IMEI=' + str(imei) + ';')
         return
 
-    def addDecodedPacket(self, imei, data):
-        return
-
     def setFields(self, imei: bytearray, fields: list):
         addFields = self.db.prepare(
             "INSERT INTO device_fieldset(device_id,fieldset) values($1,$2) ON CONFLICT(device_id) DO UPDATE SET fieldset=$3")
@@ -172,3 +169,15 @@ class NavtelecomDB:
             return False
         else:
             return True
+
+    # il_kow Добавить разобранный пакет в таблицу decoded_packets
+    """
+    def addDecodedPacket(self, imei: bytearray, data: bytearray):
+        addRaw = self.db.prepare("INSERT INTO decoded_packets(id,device_id,data,timestamp,processed) values(DEFAULT,$1,$2,DEFAULT,DEFAULT)")
+        devImei = ''
+        for b in imei:
+            devImei += chr(b)
+        addRaw(int(devImei), data)
+        logging.info('Device send packet: IMEI=' + str(imei) + ';')
+        return
+    """

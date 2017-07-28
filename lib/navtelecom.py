@@ -113,6 +113,10 @@ class Navtelecom:
             imeiToCheck = self.getImei(connection) # il_kow Проверка на наличие устройства в БД
             if db.imeiToCheck(int(imeiToCheck)):
                 db.addRawPacket(self.getImei(connection),data)
+                # Направить пакет на разбор
+                packet = (self.getImei(connection), data)
+                # decodedBytes = self.decodeSinglePacket(packet)  # il_kow Пакет разобран и добавляется в БД, таблица decoded, packets
+                # db.addDecodedPacket(self.getImei(connection), str(decodedBytes))  # TODO: il_kow Добавить разобранный пакет в таблицу "decoded_packets"
             connection.transport.write(self.formAnswer(data))
         client = self.getClient(connection)
         # decode current state
@@ -141,6 +145,51 @@ class Navtelecom:
                         decoded = self.decodeAdditionalTelemetry(data[start:start + size])
                 start += size
                 count -= 1
+
+    #  il_kow Разобрать пакет (для записи в таблицу decoded_packets)
+    def decodeSinglePacket(self, packet):
+        try:
+            db = postgres.NavtelecomDB.getInstance()
+            imei = str(packet[0]).encode()
+            client = {'fields': db.getField(int(packet[0]))[0][0]}
+            data = packet[1]
+            if (data[:2] == b'~C'):
+                logging.info('C')
+                telemetry = data[2:len(data) - 1]
+                decoded = self.decodeTelemetry(telemetry, client)
+                return decoded
+                # decode alarm package and\or additional package
+            if (data[:2] == b'~T' or data[:2] == b'~X'):
+                if (data[:2] == b'~T'):
+                    telemetry = data[6:len(data) - 1]
+                    logging.info('T')
+                    decoded = self.decodeTelemetry(telemetry, client)
+                    return decoded
+                if (data[:2] == b'~X'):
+                    telemetry = data[10:len(data) - 1]
+                    logging.info('X')
+                    decoded = self.decodeAdditionalTelemetry(telemetry)
+                    return decoded
+            else:
+                # decode array and array of additional packages
+                size = int(len(data[3:-1]) / data[2])
+                count = int(data[2])
+                start = 3
+                while (count > 0):
+                    if (data[:2] == b'~A'):
+                        logging.info('A')
+                        decoded = self.decodeTelemetry(data[start:start + size], client)
+                        return decoded
+                    else:
+                        if (data[:2] == b'~E'):
+                            decoded = self.decodeAdditionalTelemetry(data[start + 4:start + size])
+                            logging.info('E')
+                            return decoded
+                    start += size
+                    count -= 1
+                logging.info('decoding many-field package ended')
+        except KeyError:
+            print("There is a KeyError here")  # TODO: Нужно ли записывать битый пакет в другую таблицу с битыми данными?
 
     def checkCRC(self, data: bytearray):
         crc = crc8custom.crc8()
@@ -260,47 +309,50 @@ class Navtelecom:
         db = postgres.NavtelecomDB.getInstance()
         packets = db.getNotDecodedPackets()
         for packet in packets:
-            packet_id = packet[0]
-            logging.info('packet_id='+str(packet_id))
-            imei = str(packet[1]).encode()
-            client = {'fields':db.getField(packet[1])[0][0]}
-            data = packet[2]
-            if (data[:2] == b'~C'):
-                logging.info('C')
-                telemetry = data[2:len(data) - 1]
-                decoded = self.decodeTelemetry(telemetry, client)
-                self.sendToNVG(self.toNVG(imei, decoded, client['fields']), packet_id)
-
-                # decode alarm package and\or additional package
-            if (data[:2] == b'~T' or data[:2] == b'~X'):
-                if (data[:2] == b'~T'):
-                    telemetry = data[6:len(data) - 1]
+            try:
+                packet_id = packet[0]
+                logging.info('packet_id='+str(packet_id))
+                imei = str(packet[1]).encode()
+                client = {'fields':db.getField(packet[1])[0][0]}
+                data = packet[2]
+                if (data[:2] == b'~C'):
+                    logging.info('C')
+                    telemetry = data[2:len(data) - 1]
                     decoded = self.decodeTelemetry(telemetry, client)
-                    logging.info('T')
-                    self.sendToNVG(self.toNVG(imei,decoded,client['fields']),packet_id)
-                if (data[:2] == b'~X'):
-                    telemetry = data[10:len(data) - 1]
-                    decoded = self.decodeAdditionalTelemetry(telemetry)
-                    logging.info('X')
-                    self.sendToNVG(self.additionalToNVG(imei, decoded), packet_id)
-            else:
-                # decode array and array of additional packages
-                size = int(len(data[3:-1]) / data[2])
-                count = int(data[2])
-                start = 3
-                while (count > 0):
-                    if (data[:2] == b'~A'):
-                        logging.info('A')
-                        decoded = self.decodeTelemetry(data[start:start + size], client)
-                        self.sendToNVG(self.toNVG(imei, decoded, client['fields']),packet_id)
-                    else:
-                        if (data[:2] == b'~E'):
-                            decoded = self.decodeAdditionalTelemetry(data[start+4:start + size])
-                            logging.info('E')
-                            self.sendToNVG(self.additionalToNVG(imei, decoded), packet_id)
-                    start += size
-                    count -= 1
-                logging.info('decoding many-field package ended')
+                    self.sendToNVG(self.toNVG(imei, decoded, client['fields']), packet_id)
+
+                    # decode alarm package and\or additional package
+                if (data[:2] == b'~T' or data[:2] == b'~X'):
+                    if (data[:2] == b'~T'):
+                        telemetry = data[6:len(data) - 1]
+                        decoded = self.decodeTelemetry(telemetry, client)
+                        logging.info('T')
+                        self.sendToNVG(self.toNVG(imei,decoded,client['fields']),packet_id)
+                    if (data[:2] == b'~X'):
+                        telemetry = data[10:len(data) - 1]
+                        decoded = self.decodeAdditionalTelemetry(telemetry)
+                        logging.info('X')
+                        self.sendToNVG(self.additionalToNVG(imei, decoded), packet_id)
+                else:
+                    # decode array and array of additional packages
+                    size = int(len(data[3:-1]) / data[2])
+                    count = int(data[2])
+                    start = 3
+                    while (count > 0):
+                        if (data[:2] == b'~A'):
+                            logging.info('A')
+                            decoded = self.decodeTelemetry(data[start:start + size], client)
+                            self.sendToNVG(self.toNVG(imei, decoded, client['fields']),packet_id)
+                        else:
+                            if (data[:2] == b'~E'):
+                                decoded = self.decodeAdditionalTelemetry(data[start+4:start + size])
+                                logging.info('E')
+                                self.sendToNVG(self.additionalToNVG(imei, decoded), packet_id)
+                        start += size
+                        count -= 1
+                    logging.info('decoding many-field package ended')
+            except KeyError:
+                print ("There is key error here")
 
     def toNVG(self,imei: bytearray, data: list, fields: list):
         packet = nvg.NVG()

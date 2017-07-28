@@ -1,21 +1,14 @@
 import postgresql
 import logging
 import json
-
+from lib.registry import Registry
 
 class NavtelecomDB:
     _instance = None
-    db_conf = {
-        "host": "192.168.0.41",
-        "port": "5432",
-        "user": "navtelecom",
-        "password": "navetlecom",
-        "db": "navtelecom"
-    }
 
     def __init__(self):
-        self.db = postgresql.open('pq://' + self.db_conf['user'] + ':' + self.db_conf['password'] +
-                                  '@' + self.db_conf['host'] + ':' + self.db_conf['port'] + '/' + self.db_conf['db'])
+        self.db = postgresql.open('pq://' + Registry.getInstance().getConfig()['db']['user'] + ':' + Registry.getInstance().getConfig()['db']['password'] +
+                                  '@' + Registry.getInstance().getConfig()['db']['host'] + ':' + Registry.getInstance().getConfig()['db']['port'] + '/' + Registry.getInstance().getConfig()['db']['db'])
         return
 
     def __del__(self):

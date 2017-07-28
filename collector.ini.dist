@@ -1,0 +1,21 @@
+[default]
+default_server_port = 9000
+default_server_api_port = 9090
+
+[threading]
+# max threads for each device
+max_threads = 32
+
+[db]
+host = localhost
+port = 5432
+db = navtelecom
+user = navtelecom
+password = navtelecom
+
+[log]
+# 0 - disabled; 10 - enabled
+enable_logging = 10
+# full path with file name
+server_log = collector-server.log
+

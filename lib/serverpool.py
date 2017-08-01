@@ -1,6 +1,6 @@
 from multiprocessing import Process, Manager, SimpleQueue
 import os
-from lib.navtelecom import *
+from lib import navtelecom
 from lib.postgres import NavtelecomDB
 
 class ServerPool:
@@ -16,7 +16,7 @@ class ServerPool:
 
     @staticmethod
     def doJob(data, imei):
-        navtel = Navtelecom()
+        navtel = navtelecom.Navtelecom()
         decodedBytes = navtel.decodeSinglePacket(data)
         db = NavtelecomDB.getInstance()
         db.addDecodedPacket(imei, str(decodedBytes))

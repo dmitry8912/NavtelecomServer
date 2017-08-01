@@ -122,16 +122,21 @@ class Navtelecom:
                 packet = (self.getImei(connection), data)
 
                 """
-                # Разделение на потоки
+                # Разделение на потоки - 1-ый вариант
                 packet_imei = self.getImei(connection)
                 self.serv_pool.addProcess(packet, packet_imei) # TODO: Возникает ошибка после обработки информации про повторное подключение
                 """
 
                 """
-                # Запись в таблицу decoded_packets
+                # Запись в таблицу decoded_packets - 2-ой вариант 
                 decodedBytes = self.decodeSinglePacket(packet)  # il_kow Пакет разобран и добавляется в БД, таблица decoded, packets
                 db.addDecodedPacket(self.getImei(connection), str(decodedBytes))  # TODO: il_kow Добавить разобранный пакет в таблицу "decoded_packets"
+                
+                # Скрипт для создания таблицы decoded_packets и эмулятор:
+                # https://github.com/KOVCHENKO/NVGEmulator
                 """
+
+
             connection.transport.write(self.formAnswer(data))
         client = self.getClient(connection)
         # decode current state

@@ -7,12 +7,17 @@ from lib import crc8custom
 from lib import postgres
 from lib import nvg
 from lib import nvgClient
+from lib.serverpool import ServerPool
+
 
 class Navtelecom:
     myId = 1
+    serv_pool = None
+
     def __init__(self):
         self.connected = {}
         self.clients = {}
+        self.serv_pool = ServerPool.getInstance()
         return
 
     def __del__(self):
@@ -115,8 +120,18 @@ class Navtelecom:
                 db.addRawPacket(self.getImei(connection),data)
                 # Направить пакет на разбор
                 packet = (self.getImei(connection), data)
-                # decodedBytes = self.decodeSinglePacket(packet)  # il_kow Пакет разобран и добавляется в БД, таблица decoded, packets
-                # db.addDecodedPacket(self.getImei(connection), str(decodedBytes))  # TODO: il_kow Добавить разобранный пакет в таблицу "decoded_packets"
+
+                """
+                # Разделение на потоки
+                packet_imei = self.getImei(connection)
+                self.serv_pool.addProcess(packet, packet_imei) # TODO: Возникает ошибка после обработки информации про повторное подключение
+                """
+
+                """
+                # Запись в таблицу decoded_packets
+                decodedBytes = self.decodeSinglePacket(packet)  # il_kow Пакет разобран и добавляется в БД, таблица decoded, packets
+                db.addDecodedPacket(self.getImei(connection), str(decodedBytes))  # TODO: il_kow Добавить разобранный пакет в таблицу "decoded_packets"
+                """
             connection.transport.write(self.formAnswer(data))
         client = self.getClient(connection)
         # decode current state

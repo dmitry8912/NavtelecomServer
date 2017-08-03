@@ -2,6 +2,7 @@ from twisted.internet import reactor
 from lib.serverProtocol import NavtelecomProtocolFactory
 from lib.registry import Registry
 import logging
+import os
 
 if __name__ =='__main__':
     print("Starting Server")
@@ -9,3 +10,5 @@ if __name__ =='__main__':
     factory = NavtelecomProtocolFactory()
     reactor.listenTCP(int(Registry.getInstance().getConfig()['default']['default_server_port']), factory)
     reactor.run()
+else:
+    print('IM A THREAD NUMBER: ' + str(os.getpid()))

@@ -34,9 +34,6 @@ class NavtelecomDB:
         logging.info('Device send packet: IMEI=' + str(imei) + ';')
         return
 
-    def addDecodedPacket(self, imei, data):
-        return
-
     def setFields(self, imei: bytearray, fields: list):
         addFields = self.db.prepare(
             "INSERT INTO device_fieldset(device_id,fieldset) values($1,$2) ON CONFLICT(device_id) DO UPDATE SET fieldset=$3")
@@ -172,3 +169,35 @@ class NavtelecomDB:
             return False
         else:
             return True
+
+    # il_kow Добавить разобранный пакет в таблицу decoded_packets
+    """
+    def addDecodedPacket(self, imei: bytearray, data: bytearray):
+        addRaw = self.db.prepare("INSERT INTO decoded_packets(id,device_id,data,timestamp,processed) values(DEFAULT,$1,$2,DEFAULT,DEFAULT)")
+        devImei = ''
+        for b in imei:
+            devImei += chr(b)
+        addRaw(int(devImei), data)
+        logging.info('Device send packet: IMEI=' + str(imei) + ';')
+        return
+    """
+
+    # il_kow Получить все приемники
+    def getReceiversList(self):
+        receiversList = self.db.prepare('SELECT array_to_json(array_agg(receivers_list)) '
+                                        'FROM ('        
+                                            'SELECT "receivers".id as id, "receivers".name as name, '
+                                            '"receivers".address as address, "receivers".port as port '
+                                            'FROM "receivers")'
+                                        'receivers_list;')
+        return json.loads(receiversList()[0][0])
+
+    # il_kow Добавить приемник
+    def addReceiver(self, name:str, address:str, port:str):
+        receiverAdd = self.db.prepare("SELECT receiver_add($1, $2, $3)")
+        return receiverAdd(name, address, port)[0][0]
+
+    # il_kow Редактировать приемник
+    def updateReceiver(self, id:int, name:str, address:str, port:str ):
+        receiverUpdate = self.db.prepare('UPDATE "receivers" SET name = $2, address = $3, port = $4 WHERE id = $1;')
+        return receiverUpdate(id, name, address, port)

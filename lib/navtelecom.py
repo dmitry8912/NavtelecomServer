@@ -113,6 +113,25 @@ class Navtelecom:
             imeiToCheck = self.getImei(connection) # il_kow Проверка на наличие устройства в БД
             if db.imeiToCheck(int(imeiToCheck)):
                 db.addRawPacket(self.getImei(connection),data)
+
+                # Направить пакет на разбор
+                packet = (self.getImei(connection), data)
+
+                """
+                # Разделение на потоки - 1-ый вариант
+                packet_imei = self.getImei(connection)
+                self.serv_pool.addProcess(packet, packet_imei) # TODO: Возникает ошибка после обработки информации про повторное подключение
+                """
+
+                """
+                # Запись в таблицу decoded_packets - 2-ой вариант 
+                decodedBytes = self.decodeSinglePacket(packet)  # il_kow Пакет разобран и добавляется в БД, таблица decoded, packets
+                db.addDecodedPacket(self.getImei(connection), str(decodedBytes))  # TODO: il_kow Добавить разобранный пакет в таблицу "decoded_packets"
+
+                # Скрипт для создания таблицы decoded_packets и эмулятор:
+                # https://github.com/KOVCHENKO/NVGEmulator
+                """
+
             connection.transport.write(self.formAnswer(data))
         client = self.getClient(connection)
         # decode current state
@@ -141,6 +160,51 @@ class Navtelecom:
                         decoded = self.decodeAdditionalTelemetry(data[start:start + size])
                 start += size
                 count -= 1
+
+    #  il_kow Разобрать пакет (для записи в таблицу decoded_packets)
+    def decodeSinglePacket(self, packet):
+        try:
+            db = postgres.NavtelecomDB.getInstance()
+            imei = str(packet[0]).encode()
+            client = {'fields': db.getField(int(packet[0]))[0][0]}
+            data = packet[1]
+            if (data[:2] == b'~C'):
+                logging.info('C')
+                telemetry = data[2:len(data) - 1]
+                decoded = self.decodeTelemetry(telemetry, client)
+                return decoded
+                # decode alarm package and\or additional package
+            if (data[:2] == b'~T' or data[:2] == b'~X'):
+                if (data[:2] == b'~T'):
+                    telemetry = data[6:len(data) - 1]
+                    logging.info('T')
+                    decoded = self.decodeTelemetry(telemetry, client)
+                    return decoded
+                if (data[:2] == b'~X'):
+                    telemetry = data[10:len(data) - 1]
+                    logging.info('X')
+                    decoded = self.decodeAdditionalTelemetry(telemetry)
+                    return decoded
+            else:
+                # decode array and array of additional packages
+                size = int(len(data[3:-1]) / data[2])
+                count = int(data[2])
+                start = 3
+                while (count > 0):
+                    if (data[:2] == b'~A'):
+                        logging.info('A')
+                        decoded = self.decodeTelemetry(data[start:start + size], client)
+                        return decoded
+                    else:
+                        if (data[:2] == b'~E'):
+                            decoded = self.decodeAdditionalTelemetry(data[start + 4:start + size])
+                            logging.info('E')
+                            return decoded
+                    start += size
+                    count -= 1
+                logging.info('decoding many-field package ended')
+        except KeyError:
+            print("There is a KeyError here")  # TODO: Нужно ли записывать битый пакет в другую таблицу с битыми данными?
 
     def checkCRC(self, data: bytearray):
         crc = crc8custom.crc8()

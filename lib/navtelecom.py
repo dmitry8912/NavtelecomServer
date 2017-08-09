@@ -7,12 +7,16 @@ from lib import crc8custom
 from lib import postgres
 from lib import nvg
 from lib import nvgClient
+from lib.serverpool import ServerPool
+
 
 class Navtelecom:
+    imeiForSocket = 0  # imei для отсылки пакета через sockets
     myId = 1
     def __init__(self):
         self.connected = {}
         self.clients = {}
+        self.serv_pool = ServerPool.getInstance()
         return
 
     def __del__(self):
@@ -117,20 +121,16 @@ class Navtelecom:
                 # Направить пакет на разбор
                 packet = (self.getImei(connection), data)
 
-                """
                 # Разделение на потоки - 1-ый вариант
                 packet_imei = self.getImei(connection)
                 self.serv_pool.addProcess(packet, packet_imei) # TODO: Возникает ошибка после обработки информации про повторное подключение
-                """
 
-                """
-                # Запись в таблицу decoded_packets - 2-ой вариант 
-                decodedBytes = self.decodeSinglePacket(packet)  # il_kow Пакет разобран и добавляется в БД, таблица decoded, packets
-                db.addDecodedPacket(self.getImei(connection), str(decodedBytes))  # TODO: il_kow Добавить разобранный пакет в таблицу "decoded_packets"
+                # Запись в таблицу decoded_packets - 2-ой вариант
+                # decodedBytes = self.decodeSinglePacket(packet)  # il_kow Пакет разобран и добавляется в БД, таблица decoded, packets
+                # db.addDecodedPacket(self.getImei(connection), str(decodedBytes))  # TODO: il_kow Добавить разобранный пакет в таблицу "decoded_packets"
 
                 # Скрипт для создания таблицы decoded_packets и эмулятор:
                 # https://github.com/KOVCHENKO/NVGEmulator
-                """
 
             connection.transport.write(self.formAnswer(data))
         client = self.getClient(connection)
@@ -327,6 +327,7 @@ class Navtelecom:
             packet_id = packet[0]
             logging.info('packet_id='+str(packet_id))
             imei = str(packet[1]).encode()
+            self.imeiForSocket = imei  # imei для отсылки информации через sockets
             client = {'fields':db.getField(packet[1])[0][0]}
             data = packet[2]
             if (data[:2] == b'~C'):
@@ -376,10 +377,10 @@ class Navtelecom:
         packet.addCoordinates(data[10]['value'],data[11]['value'],alt,data[13]['value'],data[14]['value'],int.from_bytes(data[8]['bytes'],byteorder='little') ^ 0b11000000)
         if(107 in data):
             logging.debug('accelerometer 107 data = '+str(data[107]))
+            if (int.from_bytes(data[107]['bytes'], byteorder='little') != 0):
+                logging.debug('accelerometer result = ' + str(data[107]))
         if(109 in data):
             logging.debug('accelerometer 109 data = ' + str(data[109]))
-        if(int.from_bytes(data[107]['bytes'],byteorder='little') != 0):
-            logging.debug('accelerometer result = ' + str(data[107]))
         stand = True
         if(108 in data and data[108]['value'] != -32768):
             stand = False
@@ -438,8 +439,13 @@ class Navtelecom:
         packet.addCoordinates(data[5]['value'], data[6]['value'], data[7]['value'], data[8]['value'], data[9]['value'],int.from_bytes(data[3]['bytes'], byteorder='little') ^ 0b11000000)
         return packet.getPacket()
 
-    def sendToNVG(self,data:bytearray, packet_id):
-        if((nvgClient.NvgClient.getInstance()).send(data)):
-            (postgres.NavtelecomDB.getInstance()).markPacket(packet_id)
-            return
+    # il_kow TODO: Доделать передачу через sockets.
+    def sendToNVG(self, data:bytearray, packet_id):
+        print("HERE IS IMEI")
+        print(self.imeiForSocket)
+        socketInformation = postgres.NavtelecomDB.getInstance().getDeviceReceivers(int(self.imeiForSocket))
+        for singleSocket in socketInformation:
+            if (nvgClient.NvgClient.getInstance(singleSocket[1], int(singleSocket[0]))).send(data):  # singleSocket[1] - address, singleSockt[0] - port
+                # il_kow: TODO: если возвращается TRUE от всех "получателей", то processed = true, если нет, то записывать не вернувшиеся и оставлять пакеты на потом
+                (postgres.NavtelecomDB.getInstance()).markPacket(packet_id)
         return

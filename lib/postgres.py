@@ -75,85 +75,10 @@ class NavtelecomDB:
             "select TO_CHAR(timestamp, 'DD.MM.YYYY HH24:MI:SS') as lasttime from raw_packets order by timestamp DESC limit 1");
         return query()
 
-    def getVendorsList(self):
-        vendorList = self.db.prepare('SELECT array_to_json(array_agg("Vendors")) FROM "Vendors"')
-        return json.loads(vendorList()[0][0])
-
-    def addVendor(self, name: str):
-        vendorAdd = self.db.prepare("SELECT vendor_add_ret_id($1)")
-        return vendorAdd(name)[0][0]
-
-    def updateVendor(self, id: int, name: str):
-        vendor = self.db.prepare("SELECT vendor_update($1,$2)")
-        return vendor(id, name)[0][0]
-
-    def deleteVendor(self, id: int):
-        vendor = self.db.prepare("SELECT vendor_delete($1)")
-        return vendor(id)[0][0]
-
-    def getModelsList(self):
-        modelsList = self.db.prepare(
-            'SELECT array_to_json(array_agg(models_list)) FROM (SELECT "Vendor_Models".id AS model_id, "Vendors".id AS vendor_id, "Vendor_Models".name AS model_name, "Vendors".name AS vendor_name FROM "Vendors", "Vendor_Models" WHERE "Vendors".id = "Vendor_Models".vendor_id) models_list;')
-        return json.loads(modelsList()[0][0])
-
-    def addModel(self, name: str, vendor_id: int):
-        modelAdd = self.db.prepare("SELECT model_add($1,$2)")
-        return modelAdd(name, vendor_id)[0][0]
-
-    def updateModel(self, name: str, id: int, vendor_id: int = -1):
-        modelUpdate = self.db.prepare("SELECT model_update($1,$2,$3)")
-        return modelUpdate(id, name, vendor_id)[0][0]
-
-    def deleteModel(self, id: int):
-        model = self.db.prepare("SELECT model_delete($1)")
-        return model(id)[0][0]
-
-    # il_kow: Получить список всех устройств
-    def getDevicesList(self):
-        devicesList = self.db.prepare('SELECT array_to_json(array_agg(devices_list)) '
-                                      'FROM (SELECT  "devices".imei as imei, '
-                                      '"devices".ntcb_id as ntcb_id, '
-                                      '"devices".lastseen as last_seen, '
-                                      '"devices".model_id as model_id, '
-                                      '"devices".number as num, '
-                                      '"Vendor_Models".name as model_name '
-                                      'FROM "Vendor_Models", "devices" '
-                                      'WHERE "Vendor_Models".id = "devices".model_id)'
-                                      ' devices_list;')
-        return json.loads(devicesList()[0][0])
-
-    # il_kow: Добавить устройство
-    def addDevice(self, imei: int):
-        device_add = self.db.prepare("SELECT device_add($1)")
-        return device_add(imei)[0][0]
-
-    # il_kow: Обновить устройство
-    def updateDevice(self, imei: int, ntcb_id: int, number: str, model_id: int):
-        deviceUpdate = self.db.prepare("SELECT device_update($1, $2, $3, $4)")
-        return deviceUpdate(imei, ntcb_id, number, model_id)[0][0]
-
-    # il_kow: Добавить устройство (метод new device)
-    def newDevice(self, imei: int, model_id: int):
-        device_add = self.db.prepare("SELECT device_new($1, $2)")
-        return device_add(imei, model_id)[0][0]
-
     # il_kow: Удалить устройство
     def deleteDevice(self, imei: int):
         device_delete = self.db.prepare("SELECT device_delete($1)")
         return device_delete(imei)[0][0]
-
-    # il_kow: Получить все модели определенного устройства
-    def getModelsListByVendor(self, vendor_id: int):
-        modelsList = self.db.prepare('SELECT array_to_json(array_agg(models_list)) '
-                                     'FROM ('
-                                     'SELECT "Vendor_Models".id AS model_id, '
-                                     '"Vendors".id AS vendor_id, '
-                                     '"Vendor_Models".name AS model_name, '
-                                     '"Vendors".name AS vendor_name '
-                                     'FROM "Vendors", "Vendor_Models" '
-                                     'WHERE "Vendors".id = "Vendor_Models".vendor_id and "Vendor_Models".vendor_id = $1)'
-                                     'models_list;')
-        return json.loads(modelsList(vendor_id)[0][0])
 
     # il_kow Запросы для других классов
     # Получить все устройства - imei - (записывать пакет в БД или нет)
@@ -171,16 +96,14 @@ class NavtelecomDB:
             return True
 
     # il_kow Добавить разобранный пакет в таблицу decoded_packets
-    """
     def addDecodedPacket(self, imei: bytearray, data: bytearray):
-        addRaw = self.db.prepare("INSERT INTO decoded_packets(id,device_id,data,timestamp,processed) values(DEFAULT,$1,$2,DEFAULT,DEFAULT)")
+        addRaw = self.db.prepare("INSERT INTO decoded_packets(id, device_id, data, timestamp, processed) values(DEFAULT, $1, $2, DEFAULT, DEFAULT)")
         devImei = ''
         for b in imei:
             devImei += chr(b)
         addRaw(int(devImei), data)
         logging.info('Device send packet: IMEI=' + str(imei) + ';')
         return
-    """
 
     # il_kow Получить все приемники
     def getReceiversList(self):
@@ -201,3 +124,15 @@ class NavtelecomDB:
     def updateReceiver(self, id:int, name:str, address:str, port:str ):
         receiverUpdate = self.db.prepare('UPDATE "receivers" SET name = $2, address = $3, port = $4 WHERE id = $1;')
         return receiverUpdate(id, name, address, port)
+
+    # il_kow Получить приемники(получатели) - для дальнейшей отправки сигналов по ним
+    def getDeviceReceivers(self, imei:int):
+        singleDeviceReceivers = self.db.prepare('select "receivers".port, "receivers".address, "devices".imei, '
+                                                ' "receivers".name from "devices" '
+                                                ' inner join "device_receiver" on '
+                                                ' "device_receiver".device_imei = "devices".imei '
+                                                ' inner join "receivers" '
+                                                ' on "device_receiver".receiver_id = "receivers".id ' 
+                                                ' where "devices".imei = $1;')
+        return singleDeviceReceivers(imei)
+

@@ -1,9 +1,15 @@
 import socket
 import logging
 
+
 class NvgClient:
     _instance = None
-    def __init__(self):
+    address = ''
+    port = 0
+
+    def __init__(self, address, port):
+        self.address = address
+        self.port = port
         self.s = socket.socket()
         self.s.settimeout(3)
         self.connect()
@@ -16,14 +22,15 @@ class NvgClient:
             return
 
     @staticmethod
-    def getInstance():
+    def getInstance(address, port):
         if(NvgClient._instance == None):
-            NvgClient._instance = NvgClient()
+            NvgClient._instance = NvgClient(address, port)
         return NvgClient._instance
 
     def connect(self):
         try:
-            self.s.connect(('91.202.252.202',2999))
+            self.s.connect((self.address, self.port))
+            print("PORTS in NVG CLIENT: {0}".format(self.port))
         except socket.error:
             self.s.close()
             self.s = socket.socket()
@@ -42,6 +49,7 @@ class NvgClient:
                 return True
             else:
                 logging.info('NVG BAD')
+                return False
         except socket.timeout:
             self.s.close()
             self.connect()

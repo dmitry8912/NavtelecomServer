@@ -1,12 +1,12 @@
+import logging
 import string
 import struct
-import logging
-import socket
-from lib import datadict
+
 from lib import crc8custom
-from lib import postgres
+from lib import datadict
 from lib import nvg
 from lib import nvgClient
+from lib.database import postgres
 from lib.serverpool import ServerPool
 
 
@@ -439,13 +439,12 @@ class Navtelecom:
         packet.addCoordinates(data[5]['value'], data[6]['value'], data[7]['value'], data[8]['value'], data[9]['value'],int.from_bytes(data[3]['bytes'], byteorder='little') ^ 0b11000000)
         return packet.getPacket()
 
-    # il_kow TODO: Доделать передачу через sockets.
     def sendToNVG(self, data:bytearray, packet_id):
-        print("HERE IS IMEI")
-        print(self.imeiForSocket)
         socketInformation = postgres.NavtelecomDB.getInstance().getDeviceReceivers(int(self.imeiForSocket))
         for singleSocket in socketInformation:
-            if (nvgClient.NvgClient.getInstance(singleSocket[1], int(singleSocket[0]))).send(data):  # singleSocket[1] - address, singleSockt[0] - port
-                # il_kow: TODO: если возвращается TRUE от всех "получателей", то processed = true, если нет, то записывать не вернувшиеся и оставлять пакеты на потом
+            responseResult = nvgClient.NvgClient.getInstance(singleSocket[1], int(singleSocket[0])).send(data) # singleSocket[1] - address, singleSockt[0] - port
+            if responseResult:
                 (postgres.NavtelecomDB.getInstance()).markPacket(packet_id)
+            else:
+                (postgres.NavtelecomDB.getInstance()).markPacketAsFailed(packet_id, data, singleSocket[4])  # singleSocket[4] - receiver_id
         return

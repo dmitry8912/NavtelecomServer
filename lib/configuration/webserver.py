@@ -1,7 +1,7 @@
-from twisted.web import server, resource
-from twisted.web import http_headers
-from twisted.internet import reactor
-from lib.gateway import Gateway as gw
+from twisted.web import resource
+
+from lib.database.gateway import Gateway as gw
+
 
 class Simple(resource.Resource):
     isLeaf = True

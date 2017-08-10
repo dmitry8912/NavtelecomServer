@@ -1,10 +1,13 @@
-from twisted.internet import reactor
+from twisted.internet.protocol import ServerFactory
+import json
+
 from twisted.internet.protocol import ServerFactory
 from twisted.protocols.basic import LineReceiver
 from twisted.protocols.policies import TimeoutMixin
+
 from lib import navtelecom
-from lib import postgres
-import json
+from lib.database import postgres
+
 
 class NavtelecomProtocol(LineReceiver, TimeoutMixin):
 

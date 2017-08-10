@@ -1,8 +1,9 @@
 from twisted.internet import reactor
+from twisted.web import server
+
+from lib.configuration import webserver
+from lib.configuration.registry import Registry
 from lib.serverProtocol import NavtelecomProtocolFactory
-from twisted.web import server, resource
-from lib import webserver
-from lib.registry import Registry
 
 print("Starting Web Server")
 factory = NavtelecomProtocolFactory()

@@ -1,7 +1,8 @@
 import json
+
 import postgresql.exceptions
-from lib import postgres
-from lib.registry import Registry
+
+from lib.configuration.registry import Registry
 
 
 class Gateway:

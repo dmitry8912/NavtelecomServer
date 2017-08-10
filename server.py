@@ -1,8 +1,10 @@
-from twisted.internet import reactor
-from lib.serverProtocol import NavtelecomProtocolFactory
-from lib.registry import Registry
 import logging
 import os
+
+from twisted.internet import reactor
+
+from lib.configuration.registry import Registry
+from lib.serverProtocol import NavtelecomProtocolFactory
 
 if __name__ =='__main__':
     print("Starting Server")

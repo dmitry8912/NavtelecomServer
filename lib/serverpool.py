@@ -1,7 +1,8 @@
-from multiprocessing import Process, Manager, SimpleQueue
 import os
+from multiprocessing import Process
+
 from lib import navtelecom
-from lib.postgres import NavtelecomDB
+from lib.database.postgres import NavtelecomDB
 
 
 class ServerPool:
@@ -31,7 +32,7 @@ class ServerPool:
             if not p.is_alive():
                 self.server_pool.remove(p)
         print(str(len(self.server_pool))+' processes in queue')
-        if len(self.server_pool) > 25:  # Количество одновременных потоков
+        if len(self.server_pool) > 1000000:  # Количество одновременных потоков
             return
         p = Process(target=ServerPool.doJob, args=(data, imei))
         self.server_pool.append(p)

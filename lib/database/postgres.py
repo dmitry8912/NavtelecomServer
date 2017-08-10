@@ -1,7 +1,10 @@
-import postgresql
-import logging
 import json
-from lib.registry import Registry
+import logging
+
+import postgresql
+
+from lib.configuration.registry import Registry
+
 
 class NavtelecomDB:
     _instance = None
@@ -66,6 +69,11 @@ class NavtelecomDB:
         markPacket(packet_id)
         return
 
+    def markPacketAsFailed(self, packet_id, data, receiver_id):
+        markFailedPacket = self.db.prepare("INSERT INTO failed_packets VALUES (DEFAULT, $1, $2, $3, DEFAULT)")
+        markFailedPacket(receiver_id, packet_id, data)
+        return
+
     def getPackets(self):
         query = self.db.prepare("select count(*) from raw_packets where processed = False");
         return query()
@@ -128,7 +136,7 @@ class NavtelecomDB:
     # il_kow Получить приемники(получатели) - для дальнейшей отправки сигналов по ним
     def getDeviceReceivers(self, imei:int):
         singleDeviceReceivers = self.db.prepare('select "receivers".port, "receivers".address, "devices".imei, '
-                                                ' "receivers".name from "devices" '
+                                                ' "receivers".name, "receivers".id from "devices" '
                                                 ' inner join "device_receiver" on '
                                                 ' "device_receiver".device_imei = "devices".imei '
                                                 ' inner join "receivers" '

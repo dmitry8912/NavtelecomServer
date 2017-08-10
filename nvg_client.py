@@ -1,7 +1,9 @@
-from lib import navtelecom
-from lib import postgres
-from tendo import singleton
 import logging
+
+from tendo import singleton
+
+from lib import navtelecom
+from lib.database import postgres
 
 me = singleton.SingleInstance()
 ntc = navtelecom.Navtelecom()

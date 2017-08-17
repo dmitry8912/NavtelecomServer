@@ -87,23 +87,23 @@ class NVG:
         return
 
     def addOutsideVoltage(self, level: int):
-        logging.debug('Outside Voltage Raw = '+str(level))
+        #logging.debug('Outside Voltage Raw = '+str(level))
         level = int(round(level / 100))
-        logging.debug('Outside Voltage Comp = ' + str(level))
+        #logging.debug('Outside Voltage Comp = ' + str(level))
         gsm = level.to_bytes(2, 'little')
-        logging.debug('Outside Voltage Bytes = ' + str(gsm))
+        #logging.debug('Outside Voltage Bytes = ' + str(gsm))
         self.addData(5, gsm)
         return
 
     def addBatteryVoltage(self, level: int):
-        logging.debug('Battery Voltage Raw = ' + str(level))
+        #logging.debug('Battery Voltage Raw = ' + str(level))
         # if(level > 4200):
         #     level = 100
         # else:
         #     level = round(((level/4200)*100)%100)
-        logging.debug('Battery Voltage Comp = ' + str(level))
+        #logging.debug('Battery Voltage Comp = ' + str(level))
         gsm = level.to_bytes(2, byteorder='little',signed = False)
-        logging.debug('Battery Voltage Bytes = ' + str(level))
+        #logging.debug('Battery Voltage Bytes = ' + str(level))
         self.addData(6, gsm)
         return
 
@@ -126,33 +126,33 @@ class NVG:
         return
 
     def addDigitalInputsStateFromFlex(self, states:bytearray):
-        logging.debug('DI states = ' + str(states))
+        #logging.debug('DI states = ' + str(states))
         if(len(states) != 2):
             states = int.from_bytes(states,byteorder='little')
             states = states.to_bytes(2,byteorder='little',signed=False)
-        logging.debug('DI states as bytes = ' + str(states))
+        #logging.debug('DI states as bytes = ' + str(states))
         self.addData(7, states)
         return
 
     def addDigitalOutputsStateFromFlex(self, states:bytearray):
-        logging.debug('DO states = ' + str(states))
+        #logging.debug('DO states = ' + str(states))
         if(len(states) != 2):
             states = int.from_bytes(states,byteorder='little')
             states = states.to_bytes(2,byteorder='little',signed=False)
-        logging.debug('DO states as bytes = ' + str(states))
+        #logging.debug('DO states as bytes = ' + str(states))
         self.addData(8,states)
         return
 
     def addADCState(self,states: list):
-        logging.debug('ADC states = ' + str(states))
+        #logging.debug('ADC states = ' + str(states))
         data = bytearray()
         num = 1
         for b in states:
             data += int(num).to_bytes(1, byteorder='little', signed=False)
             data += struct.pack('<d', float(b/100))
-            logging.debug('ADC state #'+str(num)+' = ' + str(float(b/100)))
+            #logging.debug('ADC state #'+str(num)+' = ' + str(float(b/100)))
             num += 1
-        logging.debug('ADC states as bytes = ' + str(data))
+        #logging.debug('ADC states as bytes = ' + str(data))
         self.addData(9,data)
         return
 
@@ -161,14 +161,14 @@ class NVG:
         return
 
     def addFuelLevel(self, level: list):
-        logging.debug('Fuel Levels = ' + str(level))
+        #logging.debug('Fuel Levels = ' + str(level))
         data = bytearray()
         num = 1
         for el in level:
             data += int(num).to_bytes(1,byteorder='little',signed=False)
             data += struct.pack('<d',float(el))
-            logging.debug('Fuel state #' + str(num) + ' = ' + str(float(el)))
+            #logging.debug('Fuel state #' + str(num) + ' = ' + str(float(el)))
             num += 1
-        logging.debug('Fuel states as bytes = ' + str(data))
+        #logging.debug('Fuel states as bytes = ' + str(data))
         self.addData(11,data)
         return

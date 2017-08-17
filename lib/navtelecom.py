@@ -256,66 +256,74 @@ class Navtelecom:
             offset += f['size']
         return result
 
-    def decodeFlexFromDB(self):
+    def decodeFlexFromDB(self,m = 0):
         db = postgres.NavtelecomDB.getInstance()
-        packets = db.getNotDecodedPackets()
-        for packet in packets:
-            packet_id = packet[0]
-            logging.info('packet_id='+str(packet_id))
-            imei = str(packet[1]).encode()
-            client = {'fields':db.getField(packet[1])[0][0]}
-            data = packet[2]
-            if (data[:2] == b'~C'):
-                logging.info('C')
-                telemetry = data[2:len(data) - 1]
-                decoded = self.decodeTelemetry(telemetry, client)
-                self.sendToNVG(self.toNVG(imei, decoded, client['fields']), packet_id)
+        return db.getNotDecodedPackets()
 
-                # decode alarm package and\or additional package
-            if (data[:2] == b'~T' or data[:2] == b'~X'):
-                if (data[:2] == b'~T'):
-                    telemetry = data[6:len(data) - 1]
-                    decoded = self.decodeTelemetry(telemetry, client)
-                    logging.info('T')
-                    self.sendToNVG(self.toNVG(imei,decoded,client['fields']),packet_id)
-                if (data[:2] == b'~X'):
-                    telemetry = data[10:len(data) - 1]
-                    decoded = self.decodeAdditionalTelemetry(telemetry)
-                    logging.info('X')
-                    self.sendToNVG(self.additionalToNVG(imei, decoded), packet_id)
-            else:
-                # decode array and array of additional packages
-                size = int(len(data[3:-1]) / data[2])
-                count = int(data[2])
-                start = 3
-                while (count > 0):
-                    if (data[:2] == b'~A'):
-                        logging.info('A')
-                        decoded = self.decodeTelemetry(data[start:start + size], client)
-                        self.sendToNVG(self.toNVG(imei, decoded, client['fields']),packet_id)
-                    else:
-                        if (data[:2] == b'~E'):
-                            decoded = self.decodeAdditionalTelemetry(data[start+4:start + size])
-                            logging.info('E')
-                            self.sendToNVG(self.additionalToNVG(imei, decoded), packet_id)
-                    start += size
-                    count -= 1
-                logging.info('decoding many-field package ended')
+
+
+    def decPacket(self,packet):
+        db = postgres.NavtelecomDB.getInstance()
+        packet_id = packet[0]
+        logging.debug('packet_id=' + str(packet_id))
+        logging.debug('packet recieved at time=' + str(packet[3]))
+        imei = str(packet[1]).encode()
+        client = {'fields': db.getField(packet[1])[0][0]}
+        data = packet[2]
+        if (data[:2] == b'~C'):
+            logging.info('C')
+            telemetry = data[2:len(data) - 1]
+            decoded = self.decodeTelemetry(telemetry, client)
+            self.sendToNVG(self.toNVG(imei, decoded, client['fields']), packet_id)
+
+            # decode alarm package and\or additional package
+        if (data[:2] == b'~T' or data[:2] == b'~X'):
+            if (data[:2] == b'~T'):
+                telemetry = data[6:len(data) - 1]
+                decoded = self.decodeTelemetry(telemetry, client)
+                logging.info('T')
+                self.sendToNVG(self.toNVG(imei, decoded, client['fields']), packet_id)
+            if (data[:2] == b'~X'):
+                telemetry = data[10:len(data) - 1]
+                decoded = self.decodeAdditionalTelemetry(telemetry)
+                logging.info('X')
+                self.sendToNVG(self.additionalToNVG(imei, decoded), packet_id)
+        else:
+            # decode array and array of additional packages
+            size = int(len(data[3:-1]) / data[2])
+            count = int(data[2])
+            start = 3
+            while (count > 0):
+                if (data[:2] == b'~A'):
+                    logging.info('A')
+                    decoded = self.decodeTelemetry(data[start:start + size], client)
+                    self.sendToNVG(self.toNVG(imei, decoded, client['fields']), packet_id)
+                else:
+                    if (data[:2] == b'~E'):
+                        decoded = self.decodeAdditionalTelemetry(data[start + 4:start + size])
+                        logging.info('E')
+                        self.sendToNVG(self.additionalToNVG(imei, decoded), packet_id)
+                start += size
+                count -= 1
+            logging.info('decoding many-field package ended')
+        logging.debug('ENDDEC packet_id=' + str(packet_id))
 
     def toNVG(self,imei: bytearray, data: list, fields: list):
         packet = nvg.NVG()
         packet.addIdentifier(imei)
         packet.addTime(data[3]['value'])
+        import datetime
+        logging.debug(str(datetime.datetime.fromtimestamp(data[3]['value']).strftime('%Y-%m-%d %H:%M:%S')));
         alt = 1
         if(12 in data):
             alt = data[12]['value']
         packet.addCoordinates(data[10]['value'],data[11]['value'],alt,data[13]['value'],data[14]['value'],int.from_bytes(data[8]['bytes'],byteorder='little') ^ 0b11000000)
-        if(107 in data):
-            logging.debug('accelerometer 107 data = '+str(data[107]))
-        if(109 in data):
-            logging.debug('accelerometer 109 data = ' + str(data[109]))
-        if(int.from_bytes(data[107]['bytes'],byteorder='little') != 0):
-            logging.debug('accelerometer result = ' + str(data[107]))
+        #if(107 in data):
+            #logging.debug('accelerometer 107 data = '+str(data[107]))
+        #if(109 in data):
+            #logging.debug('accelerometer 109 data = ' + str(data[109]))
+        #if(int.from_bytes(data[107]['bytes'],byteorder='little') != 0):
+            #logging.debug('accelerometer result = ' + str(data[107]))
         stand = True
         if(108 in data and data[108]['value'] != -32768):
             stand = False

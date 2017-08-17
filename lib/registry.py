@@ -6,7 +6,7 @@ class Registry:
 
     def __init__(self):
         self.config = configparser.ConfigParser()
-        self.config.read('../collector.ini')
+        self.config.read('collector.ini')
         return
 
     def __del__(self):

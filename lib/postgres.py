@@ -5,7 +5,7 @@ from lib.registry import Registry
 
 class NavtelecomDB:
     _instance = None
-
+    db = None
     def __init__(self):
         self.db = postgresql.open('pq://' + Registry.getInstance().getConfig()['db']['user'] + ':' + Registry.getInstance().getConfig()['db']['password'] +
                                   '@' + Registry.getInstance().getConfig()['db']['host'] + ':' + Registry.getInstance().getConfig()['db']['port'] + '/' + Registry.getInstance().getConfig()['db']['db'])
@@ -51,8 +51,9 @@ class NavtelecomDB:
             "select fieldset from device_fieldset where device_id = $1")
         return getFields(imei)
 
-    def getNotDecodedPackets(self, limit=0):
-        query = "select * from raw_packets where processed = False order by timestamp ASC limit 10"
+    def getNotDecodedPackets(self, limit = 0):
+        query = "select id,device_id,data, TO_CHAR(timestamp, 'DD.MM.YYYY HH24:MI:SS') as timestamp,processed from raw_packets where processed = False order by timestamp DESC limit 100"
+        #query = "select * from raw_packets where timestamp between '2017-08-12 00:00:00' and '2017-08-16 00:00:00'"
         if (limit != 0):
             query += " limit " + str(limit)
         packets = self.db.prepare(query)

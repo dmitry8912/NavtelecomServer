@@ -5,7 +5,7 @@ class NvgClient:
     _instance = None
     def __init__(self):
         self.s = socket.socket()
-        self.s.settimeout(3)
+        self.s.settimeout(10)
         self.connect()
         return
 
@@ -35,13 +35,14 @@ class NvgClient:
     def send(self, data: bytearray):
         try:
             self.s.send(data)
-            logging.info(str(data))
+            #logging.info(str(data))
             rdata = self.s.recv(1024)
             if(rdata[0] == 0x55 and rdata[1:5] == data[0:4]):
                 logging.info('NVG OK')
                 return True
             else:
                 logging.info('NVG BAD')
+                return False
         except socket.timeout:
             self.s.close()
             self.connect()
@@ -52,3 +53,4 @@ class NvgClient:
             self.s.settimeout(3)
             self.connect()
             return False
+        return False

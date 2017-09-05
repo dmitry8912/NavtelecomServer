@@ -23,7 +23,7 @@ class NvgClient:
 
     def connect(self):
         try:
-            self.s.connect(('91.202.252.202',2999))
+            self.s.connect(('192.168.3.6',2999))
         except socket.error:
             self.s.close()
             self.s = socket.socket()

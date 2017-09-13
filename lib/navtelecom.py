@@ -363,6 +363,7 @@ class Navtelecom:
                 adcStates.append(data[f]['value'])
         packet.addADCState(adcStates)
 
+        logging.debug('35-36')
         if(35 in data and 36 in data):
             packet.addFuelLevel([data[35]['value'],data[36]['value']])
         else:
@@ -371,6 +372,7 @@ class Navtelecom:
             if (36 in data):
                 packet.addFuelLevel([data[36]['value']])
 
+        logging.debug('33-34')
         if (33 in data and 34 in data):
             packet.addFuelLevel([data[33]['value'], data[34]['value']])
         else:

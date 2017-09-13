@@ -370,6 +370,15 @@ class Navtelecom:
                 packet.addFuelLevel([data[35]['value']])
             if (36 in data):
                 packet.addFuelLevel([data[36]['value']])
+
+        if (33 in data and 34 in data):
+            packet.addFuelLevel([data[33]['value'], data[34]['value']])
+        else:
+            if (33 in data):
+                packet.addFuelLevel([data[33]['value']])
+            if (34 in data):
+                packet.addFuelLevel([data[34]['value']])
+
         return packet.getPacket()
 
     def additionalToNVG(self,imei,data: list):

@@ -88,13 +88,9 @@ class Navtelecom:
         if(data_checksum != response[14]):
             return False
 
-        # Если нет в подключенных клиентах, то пустить далее
         if(self.getClient(connection) == None):
             self.clients.update({ response[20:]: connection })
             self.connected.update({ response[20:]: { 'id':response[8:12], 'preambule': response[0:4], 'fields': [] }})
-            db = postgres.NavtelecomDB.getInstance() # Автоматический создает новое устройство, если такого не существует. TODO: можно убрать, так как устройства будут вноситься вручную
-            db.connectDevice(response[20:],response[8:12]) # Автоматический создает новое устройство, если такого не существует. TODO: можно убрать, так как устройства будут вноситься вручную
-
         return response[16:len(response)]
 
     def makeHandshake(self,ntp):
@@ -309,6 +305,7 @@ class Navtelecom:
         logging.debug('ENDDEC packet_id=' + str(packet_id))
 
     def toNVG(self,imei: bytearray, data: list, fields: list):
+        logging.debug('Fuel IMEI = ' + str(imei))
         packet = nvg.NVG()
         packet.addIdentifier(imei)
         packet.addTime(data[3]['value'])

@@ -161,14 +161,14 @@ class NVG:
         return
 
     def addFuelLevel(self, level: list):
-        #logging.debug('Fuel Levels = ' + str(level))
+        logging.debug('Fuel Levels = ' + str(level))
         data = bytearray()
         num = 1
         for el in level:
             data += int(num).to_bytes(1,byteorder='little',signed=False)
             data += struct.pack('<d',float(el))
-            #logging.debug('Fuel state #' + str(num) + ' = ' + str(float(el)))
+            logging.debug('Fuel state #' + str(num) + ' = ' + str(float(el)))
             num += 1
-        #logging.debug('Fuel states as bytes = ' + str(data))
+        logging.debug('Fuel states as bytes = ' + str(data))
         self.addData(11,data)
         return

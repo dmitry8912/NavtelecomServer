@@ -305,7 +305,6 @@ class Navtelecom:
         logging.debug('ENDDEC packet_id=' + str(packet_id))
 
     def toNVG(self,imei: bytearray, data: list, fields: list):
-        logging.debug('Fuel IMEI = ' + str(imei))
         packet = nvg.NVG()
         packet.addIdentifier(imei)
         packet.addTime(data[3]['value'])
@@ -363,23 +362,31 @@ class Navtelecom:
                 adcStates.append(data[f]['value'])
         packet.addADCState(adcStates)
 
-        logging.debug('35-36')
         if(35 in data and 36 in data):
             packet.addFuelLevel([data[35]['value'],data[36]['value']])
+            logging.debug('FUL = ' + str(imei) + '; Level#35 = ' + str([data[35]['value'],data[36]['value']]))
         else:
             if (35 in data):
                 packet.addFuelLevel([data[35]['value']])
+                if(data[35]['value'] > 0):
+                    logging.debug('FUP = ' + str(imei) + '; Level#35 = ' + str(data[35]['value']))
             if (36 in data):
                 packet.addFuelLevel([data[36]['value']])
+                if (data[36]['value'] > 0):
+                    logging.debug('FUP = ' + str(imei) + '; Level#36 = ' + str(data[36]['value']))
 
-        logging.debug('33-34')
         if (33 in data and 34 in data):
             packet.addFuelLevel([data[33]['value'], data[34]['value']])
+            logging.debug('FUL = ' + str(imei) + '; Level#35 = ' + str([data[33]['value'], data[34]['value']]))
         else:
             if (33 in data):
                 packet.addFuelLevel([data[33]['value']])
+                if (data[33]['value'] > 0):
+                    logging.debug('FUP = ' + str(imei) + '; Level#33 = ' + str(data[33]['value']))
             if (34 in data):
                 packet.addFuelLevel([data[34]['value']])
+                if (data[34]['value'] > 0):
+                    logging.debug('FUP = ' + str(imei) + '; Level#34 = ' + str(data[34]['value']))
 
         return packet.getPacket()
 

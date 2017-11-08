@@ -364,7 +364,7 @@ class Navtelecom:
 
         if(35 in data and 36 in data):
             packet.addFuelLevel([data[35]['value'],data[36]['value']])
-            logging.debug('FUL = ' + str(imei) + '; Level#35 = ' + str([data[35]['value'],data[36]['value']]))
+            logging.debug('FUL = ' + str(imei) + '; Level#35-36 = ' + str([data[35]['value'],data[36]['value']]))
         else:
             if (35 in data):
                 packet.addFuelLevel([data[35]['value']])
@@ -374,19 +374,6 @@ class Navtelecom:
                 packet.addFuelLevel([data[36]['value']])
                 if (data[36]['value'] > 0):
                     logging.debug('FUP = ' + str(imei) + '; Level#36 = ' + str(data[36]['value']))
-
-        if (33 in data and 34 in data):
-            packet.addFuelLevel([data[33]['value'], data[34]['value']])
-            logging.debug('FUL = ' + str(imei) + '; Level#35 = ' + str([data[33]['value'], data[34]['value']]))
-        else:
-            if (33 in data):
-                packet.addFuelLevel([data[33]['value']])
-                if (data[33]['value'] > 0):
-                    logging.debug('FUP = ' + str(imei) + '; Level#33 = ' + str(data[33]['value']))
-            if (34 in data):
-                packet.addFuelLevel([data[34]['value']])
-                if (data[34]['value'] > 0):
-                    logging.debug('FUP = ' + str(imei) + '; Level#34 = ' + str(data[34]['value']))
 
         return packet.getPacket()
 

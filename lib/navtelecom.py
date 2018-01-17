@@ -358,6 +358,9 @@ class Navtelecom:
                 packet.addDigitalOutputsStateFromFlex(bytearray(data[32]['bytes']))
 
         adcStates = []
+        if(19 in data):
+            adcStates.append(data[19]['value'])
+
         for f in range(21,29):
             if(f in data):
                 adcStates.append(data[f]['value'])

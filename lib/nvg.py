@@ -144,7 +144,7 @@ class NVG:
         return
 
     def addADCState(self,states: list):
-        #logging.debug('ADC states = ' + str(states))
+        logging.debug('ADC states = ' + str(states))
         data = bytearray()
         num = 1
         for b in states:
